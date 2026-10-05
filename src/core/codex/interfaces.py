@@ -9,10 +9,17 @@ from src.core.codex.models.universe import Background, Universe
 class UniverseRepositoryProtocol(Protocol):
     """Репозиторий вселенных."""
 
-    async def get_all(self) -> list[Universe]:
+    async def all(self) -> list[Universe]:
         """Возвращает все вселенные.
 
         :return: список вселенных.
+        """
+        ...
+
+    async def get(self, universe_id: int) -> Universe:
+        """Возвращает вселенной по id.
+
+        :return: вселенная.
         """
         ...
 

@@ -31,10 +31,19 @@ router = APIRouter()
 
 
 @router.get("/universes", response_model=list[UniverseSchema])
-async def get_universes(
+async def universes_list(
     service: Annotated[UniverseService, Depends(get_universe_service)],
 ):
-    return await service.get_all()
+    return await service.all()
+
+
+# TODO Возвращает None вместо 404
+@router.get("/universes/{universe_id}", response_model=UniverseSchema)
+async def get_universe(
+    universe_id: int,
+    service: Annotated[UniverseService, Depends(get_universe_service)],
+):
+    return await service.get(universe_id=universe_id)
 
 
 @router.get("/universes/{universe_id}/characters", response_model=list[CharacterSchema])
@@ -45,7 +54,9 @@ async def get_characters(
     return await service.get_by_universe(universe_id)
 
 
-@router.get("/universes/{universe_id}/backgrounds", response_model=list[BackgroundSchema])
+@router.get(
+    "/universes/{universe_id}/backgrounds", response_model=list[BackgroundSchema]
+)
 async def get_backgrounds(
     universe_id: int,
     service: Annotated[BackgroundService, Depends(get_background_service)],

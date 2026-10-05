@@ -38,12 +38,26 @@ class UniverseRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_all(self) -> list[Universe]:
-        result = await self._session.scalars(select(UniverseModel).order_by(UniverseModel.id))
-        return [
-            Universe(id=m.id, slug=m.slug, title=m.title, description=m.description)
-            for m in result
-        ]
+    async def all(self) -> list[Universe]:
+        result = await self._session.scalars(
+            select(UniverseModel).order_by(UniverseModel.id)
+        )
+        return [self._to_domain(model) for model in result.all()]
+
+    async def get(self, universe_id: int) -> Universe | None:
+        model = await self._session.scalar(
+            select(UniverseModel).where(UniverseModel.id == universe_id)
+        )
+        return self._to_domain(model) if model else None
+
+    @staticmethod
+    def _to_domain(model: UniverseModel) -> Universe:
+        return Universe(
+            id=model.id,
+            slug=model.slug,
+            title=model.title,
+            description=model.description,
+        )
 
 
 class CharacterRepository:

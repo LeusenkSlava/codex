@@ -3,7 +3,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.outbound.database.models.base_model import BaseModel
-from src.outbound.database.models.universe import UniverseModel
 from src.outbound.database.models.tag import (
     TagModel,
     character_tags,
@@ -11,6 +10,7 @@ from src.outbound.database.models.tag import (
     outfit_tags,
     sprite_tags,
 )
+from src.outbound.database.models.universe import UniverseModel
 
 
 class SpriteModel(BaseModel):
