@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from src.core.codex.models.enum import TagType
+from src.core.codex.models.enum import TagKind, TagType
 
 
 @dataclass(frozen=True, slots=True)
@@ -11,3 +11,4 @@ class Tag:
     type: TagType
     slug: str
     name: str
+    kind: TagKind | None = None

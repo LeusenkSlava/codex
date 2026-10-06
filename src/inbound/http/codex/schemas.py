@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from src.core.codex.models.enum import TagType
+from src.core.codex.models.enum import TagKind, TagType
 
 
 class _Schema(BaseModel):
@@ -12,6 +12,7 @@ class TagSchema(_Schema):
     type: TagType
     slug: str
     name: str
+    kind: TagKind | None = None
 
 
 class UniverseSchema(_Schema):
@@ -56,6 +57,69 @@ class EmotionSchema(_Schema):
     name: str
     asset_key: str
     tags: list[TagSchema]
+
+
+class EmotionTagsResponse(_Schema):
+    """Доступные персонажу emotion-теги, разделённые по роли."""
+
+    base: list[TagSchema] = Field(
+        description="Базовые эмоции (kind=base), доступные персонажу.",
+    )
+    modifiers: list[TagSchema] = Field(
+        description="Модификаторы (kind=modifier), доступные персонажу.",
+    )
+
+
+class EmotionTagsRequest(_Schema):
+    """Тело запроса подбора одной эмоции.
+
+    Модель выбирает только смысл и не знает slug'и спрайтов, поэтому отправляет
+    набор тегов-смыслов. Ровно один тег должен иметь `kind=base`
+    (обязательная эмоция), остальные — необязательные уточнения `modifier`.
+    Порядок тегов не важен. Если передан `sprite_id`, эмоции этого спрайта
+    считаются более подходящими.
+    """
+
+    sprite_id: int | None = Field(
+        default=None,
+        description=(
+            "id спрайта (необязательно). Если задан, эмоции этого спрайта получают "
+            "приоритет перед эмоциями других спрайтов персонажа."
+        ),
+        examples=[1],
+    )
+    tags: list[str] = Field(
+        description=(
+            "Slug'и тегов-смыслов. Ровно один `base` (например `happy`, `sad`, "
+            "`angry`) + 0..N `modifier` (например `blush`, `crying`, `looking_away`). "
+            "Порядок не важен."
+        ),
+        examples=[["happy", "blush"], ["sad", "crying", "looking_away"]],
+    )
+
+
+class EmotionMatchItem(_Schema):
+    """Элемент батча подбора эмоций: персонаж + набор тегов-смыслов."""
+
+    character_id: int = Field(
+        description="id персонажа, для которого подбирается эмоция.",
+        examples=[1],
+    )
+    sprite_id: int | None = Field(
+        default=None,
+        description=(
+            "id спрайта (необязательно). Если задан, эмоции этого спрайта получают "
+            "приоритет перед эмоциями других спрайтов персонажа."
+        ),
+        examples=[1],
+    )
+    tags: list[str] = Field(
+        description=(
+            "Slug'и тегов-смыслов. Ровно один `base` + 0..N `modifier`. "
+            "Порядок не важен."
+        ),
+        examples=[["happy", "blush"]],
+    )
 
 
 class BackgroundSchema(_Schema):

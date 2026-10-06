@@ -46,6 +46,7 @@ class Emotion:
 
     id: int
     sprite_id: int
+    character_id: int
     slug: str
     name: str
     asset_key: str

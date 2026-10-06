@@ -9,7 +9,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.core.codex.models.enum import TagType
+from src.core.codex.models.enum import TagKind, TagType
 from src.outbound.database.models.base_model import Base, BaseModel
 from src.outbound.database.utils import pg_enum
 
@@ -26,6 +26,8 @@ class TagModel(BaseModel):
     type: Mapped[TagType] = mapped_column(pg_enum(TagType), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # роль тега: значимо только для type=emotion (base / modifier)
+    kind: Mapped[TagKind | None] = mapped_column(pg_enum(TagKind), nullable=True)
 
     def __str__(self) -> str:
         return f"{self.type}: {self.name}"

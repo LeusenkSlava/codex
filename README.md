@@ -18,7 +18,7 @@ Codex хранит «библиотеку» всего, из чего собир
 | **Outfit** | Слой одежды поверх спрайта | спрайту |
 | **Emotion** | Слой лица (эмоция) поверх спрайта | спрайту |
 | **Background** | Задник / локация | вселенной |
-| **Tag** | Теги для подбора: `emotion`, `outfit_style`, `location`, `time_of_day`, `archetype` | — |
+| **Tag** | Теги для подбора: `emotion`, `outfit_style`, `location`, `time_of_day`, `archetype`; у `emotion`-тегов есть `kind`: `base` (ровно один на эмоцию) и `modifier` (0..N) | — |
 
 Возможности:
 
@@ -34,10 +34,14 @@ Codex хранит «библиотеку» всего, из чего собир
 | Метод | Путь | Описание |
 |---|---|---|
 | GET | `/universes` | Все вселенные |
+| GET | `/universes/{universe_id}` | Вселенная по id |
 | GET | `/universes/{universe_id}/characters` | Персонажи вселенной |
 | GET | `/universes/{universe_id}/backgrounds` | Задники вселенной |
 | GET | `/characters/{character_id}/sprites` | Спрайты персонажа |
 | GET | `/characters/{character_id}/emotions` | Эмоции персонажа по всем его спрайтам |
+| GET | `/characters/{character_id}/emotions/tags` | Теги эмоций персонажа: `base` и `modifiers` отдельными списками |
+| POST | `/characters/{character_id}/emotions/match` | Подбор одной самой подходящей эмоции по тегам (`{"sprite_id": 1, "tags": ["happy", "blush"]}` — `sprite_id` необязателен) |
+| POST | `/characters/emotions/batch` | Батч подбора эмоций (`[{"character_id": 1, "sprite_id": 1, "tags": [...]}, ...]` → `dict[character_id, emotion]`) |
 | GET | `/sprites/{sprite_id}/outfits` | Одежда спрайта |
 | GET | `/media/{folder}/{filename}` | Файл изображения (значение `asset_key`) |
 | GET | `/health` | Проверка состояния сервиса |

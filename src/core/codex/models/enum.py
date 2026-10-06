@@ -9,3 +9,13 @@ class TagType(StrEnum):
     LOCATION = "location"  # background: площадь, столовая, пляж, ...
     TIME_OF_DAY = "time_of_day"  # background: morning, day, evening, night
     ARCHETYPE = "archetype"  # character: tsundere, kuudere, genki, ...
+
+
+class TagKind(StrEnum):
+    """Роль тега внутри типа emotion.
+
+    Каждой эмоции-спрайту вешается ровно один base и 0..N modifier.
+    """
+
+    BASE = "base"  # обязательная, одна на реплику
+    MODIFIER = "modifier"  # необязательные уточнения

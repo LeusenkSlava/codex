@@ -47,6 +47,14 @@ class SpriteRepositoryProtocol(Protocol):
         """
         ...
 
+    async def get_by_character_ids(self, character_ids: list[int]) -> list[Sprite]:
+        """Возвращает спрайты персонажей
+
+        :param character_ids: id персонажей.
+        :return: словарь где клюс id персонажа.
+        """
+        ...
+
 
 class OutfitRepositoryProtocol(Protocol):
     """Репозиторий одежды."""
@@ -71,11 +79,27 @@ class EmotionRepositoryProtocol(Protocol):
         """
         ...
 
+    async def get_by_character_ids(self, character_ids: list[int]) -> list[Emotion]:
+        """Возвращает все эмоции персонажа по всем его спрайтам.
+
+        :param character_ids: список id персонажей.
+        :return: список эмоций с тегами.
+        """
+        ...
+
     async def get_by_sprite(self, sprite_id: int) -> list[Emotion]:
         """Возвращает все эмоции спрайта.
 
         :param sprite_id: id спрайта.
         :return: список эмоций с тегами.
+        """
+        ...
+
+    async def get_tags_by_character(self, character_id: int) -> list[Tag]:
+        """Возвращает уникальные emotion-теги всех эмоций персонажа.
+
+        :param character_id: id персонажа.
+        :return: список тегов типа emotion (с kind).
         """
         ...
 
@@ -100,5 +124,13 @@ class TagRepositoryProtocol(Protocol):
 
         :param tag_type: тип тега.
         :return: список тегов.
+        """
+        ...
+
+    async def get_by_slugs(self, slugs: list[str]) -> dict[str, Tag]:
+        """Возвращает emotion-теги по slug'ам.
+
+        :param slugs: slug'и тегов типа emotion.
+        :return: словарь slug -> тег.
         """
         ...

@@ -18,6 +18,7 @@ from src.outbound.database.repositories import (
     EmotionRepository,
     OutfitRepository,
     SpriteRepository,
+    TagRepository,
     UniverseRepository,
 )
 
@@ -37,7 +38,7 @@ def get_sprite_service(session: SessionDep) -> SpriteService:
 
 
 def get_emotion_service(session: SessionDep) -> EmotionService:
-    return EmotionService(EmotionRepository(session))
+    return EmotionService(EmotionRepository(session), TagRepository(session))
 
 
 def get_outfit_service(session: SessionDep) -> OutfitService:
