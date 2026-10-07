@@ -2,10 +2,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.core.codex.services import EmotionService, SpriteService
+from src.core.codex.services import EmotionService, OutfitService, SpriteService
 from src.core.codex.services.emotion import EmotionMatchQuery
 from src.inbound.http.codex.dependencies import (
     get_emotion_service,
+    get_outfit_service,
     get_sprite_service,
 )
 from src.inbound.http.codex.schemas import (
@@ -14,6 +15,7 @@ from src.inbound.http.codex.schemas import (
     EmotionTagsRequest,
     EmotionTagsResponse,
     SpriteSchema,
+    TagSchema,
 )
 
 router = APIRouter(tags=["characters"])
@@ -113,3 +115,19 @@ async def match_emotions_batch(
         for item in payload
     ]
     return await service.match_batch(queries)
+
+
+@router.get(
+    "/characters/{character_id}/outfits/tags",
+    response_model=list[TagSchema],
+    summary="Теги одежды персонажа",
+    description=(
+        "Возвращает все outfit-теги (type=outfit_style), которые встречаются "
+        "у одежды персонажа, без повторений."
+    ),
+)
+async def get_outfit_tags(
+    character_id: int,
+    service: Annotated[OutfitService, Depends(get_outfit_service)],
+):
+    return await service.get_tags_by_character(character_id)

@@ -15,7 +15,7 @@ from src.outbound.database.models import (
     TagModel,
     UniverseModel,
 )
-from src.outbound.database.models.tag import emotion_tags
+from src.outbound.database.models.tag import emotion_tags, outfit_tags
 
 
 class UniverseRepository:
@@ -128,17 +128,58 @@ class OutfitRepository:
             .order_by(OutfitModel.id)
         )
         result = await self._session.scalars(stmt)
-        return [
-            Outfit(
-                id=m.id,
-                sprite_id=m.sprite_id,
-                slug=m.slug,
-                name=m.name,
-                asset_key=m.asset_key,
-                tags=[TagRepository._to_tag(t) for t in m.tags],
+        return [self._to_domain(m) for m in result]
+
+    async def get_by_sprite_and_tag(
+        self, sprite_id: int, tag_slug: str
+    ) -> Outfit | None:
+        stmt = (
+            select(OutfitModel)
+            .join(outfit_tags, OutfitModel.id == outfit_tags.c.outfits_id)
+            .join(TagModel, TagModel.id == outfit_tags.c.tag_id)
+            .where(
+                OutfitModel.sprite_id == sprite_id,
+                TagModel.slug == tag_slug,
+                TagModel.type == TagType.OUTFIT_STYLE,
             )
-            for m in result
-        ]
+            .options(selectinload(OutfitModel.tags))
+            .order_by(OutfitModel.id.desc())
+            .limit(1)
+        )
+        model = await self._session.scalar(stmt)
+        return self._to_domain(model) if model else None
+
+    async def get_tags_by_character(self, character_id: int) -> list[Tag]:
+        """Возвращает уникальные outfit-теги всей одежды персонажа.
+
+        :param character_id: id персонажа.
+        :return: список тегов типа outfit_style без повторений, по алфавиту slug.
+        """
+        stmt = (
+            select(TagModel)
+            .join(outfit_tags, TagModel.id == outfit_tags.c.tag_id)
+            .join(OutfitModel, OutfitModel.id == outfit_tags.c.outfits_id)
+            .join(SpriteModel, SpriteModel.id == OutfitModel.sprite_id)
+            .where(
+                SpriteModel.character_id == character_id,
+                TagModel.type == TagType.OUTFIT_STYLE,
+            )
+            .distinct()
+            .order_by(TagModel.slug)
+        )
+        result = await self._session.scalars(stmt)
+        return [TagRepository._to_tag(m) for m in result]
+
+    @staticmethod
+    def _to_domain(model: OutfitModel) -> Outfit:
+        return Outfit(
+            id=model.id,
+            sprite_id=model.sprite_id,
+            slug=model.slug,
+            name=model.name,
+            asset_key=model.asset_key,
+            tags=[TagRepository._to_tag(t) for t in model.tags],
+        )
 
 
 class EmotionRepository:

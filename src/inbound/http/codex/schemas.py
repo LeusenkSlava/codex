@@ -50,6 +50,18 @@ class OutfitSchema(_Schema):
     tags: list[TagSchema]
 
 
+class OutfitMatchRequest(_Schema):
+    """Тело запроса подбора одной одежды по тегу."""
+
+    tag: str = Field(
+        description=(
+            "Slug одного тега одежды (outfit_style). Если подходит несколько "
+            "вариантов, вернётся одежда с наибольшим id."
+        ),
+        examples=["casual"],
+    )
+
+
 class EmotionSchema(_Schema):
     id: int
     sprite_id: int

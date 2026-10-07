@@ -67,6 +67,27 @@ class OutfitRepositoryProtocol(Protocol):
         """
         ...
 
+    async def get_by_sprite_and_tag(
+        self, sprite_id: int, tag_slug: str
+    ) -> Outfit | None:
+        """Возвращает одну одежду спрайта с указанным тегом.
+
+        Если подходит несколько, возвращается одежда с наибольшим id.
+
+        :param sprite_id: id спрайта.
+        :param tag_slug: slug тега одежды.
+        :return: одежда с тегами или None.
+        """
+        ...
+
+    async def get_tags_by_character(self, character_id: int) -> list[Tag]:
+        """Возвращает уникальные outfit-теги всей одежды персонажа.
+
+        :param character_id: id персонажа.
+        :return: список тегов типа outfit_style без повторений.
+        """
+        ...
+
 
 class EmotionRepositoryProtocol(Protocol):
     """Репозиторий эмоций."""
