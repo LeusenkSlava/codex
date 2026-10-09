@@ -24,6 +24,7 @@ Codex хранит «библиотеку» всего, из чего собир
 
 - **REST API (только чтение)** — списки вселенных, персонажей, спрайтов, эмоций, одежды и задников.
 - **Админка** на `/admin` (sqladmin) — создание и редактирование всех сущностей, загрузка изображений.
+- **Массовый импорт персонажей** — страница «Импорт» в админке: загрузка ZIP-архива с `manifest.json` и картинками, создающего персонажей со спрайтами, одеждой и эмоциями одной операцией.
 - **Раздача медиа** — загруженные изображения сохраняются в папку `media/` и отдаются по `/media/<folder>/<file>`.
 - **Healthcheck** — `GET /health`.
 
@@ -49,6 +50,86 @@ Codex хранит «библиотеку» всего, из чего собир
 | GET | `/health` | Проверка состояния сервиса |
 
 Полная схема — в Swagger: `/docs`.
+
+### Массовый импорт персонажей
+
+В админке (`/admin`) есть страница **«Импорт»**: она принимает ZIP-архив с `manifest.json` и картинками
+и создаёт персонажа вместе со спрайтами, одеждой и эмоциями одной операцией — связи и папки медиа
+подставляются автоматически. Импорт атомарный: если есть хоть одна ошибка, ничего не создаётся,
+а на странице показывается список проблем.
+
+Архив:
+
+```
+alice.zip
+├── manifest.json
+└── alice/
+    ├── body.png      # спрайт
+    ├── casual.png    # одежда
+    └── happy.png     # эмоция
+```
+
+`manifest.json` (можно описать несколько персонажей сразу):
+
+```json
+{
+  "version": 1,
+  "universe_slug": "my-novel",
+  "characters": [
+    {
+      "slug": "alice",
+      "name": "Алиса",
+      "description": "Главная героиня",
+      "speech_style": {"tone": "soft"},
+      "tags": ["tsundere"],
+      "sprites": [
+        {
+          "slug": "default",
+          "description": "Стандартная поза",
+          "image": "alice/body.png",
+          "outfits": [
+            {"slug": "casual", "name": "Повседневная", "image": "alice/casual.png", "tags": ["casual"]}
+          ],
+          "emotions": [
+            {"slug": "happy", "name": "Радость", "image": "alice/happy.png", "tags": ["happy"]}
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Правила:
+
+- `universe_slug` — вселенная должна уже существовать.
+- Теги указываются по `slug` и должны существовать заранее; тип проверяется по контексту
+  (персонаж → `archetype`, одежда → `outfit_style`, эмоция → `emotion`; теги спрайта — любой тип).
+- `image` — путь к файлу внутри архива; картинка кладётся в `sprites` / `outfits` / `emotions`.
+- Повторный импорт уже существующего `slug` персонажа — ошибка (существующее не перезаписывается).
+
+### Теги эмоций и одежды
+
+Каждой эмоции вешается ровно один `base`-тег и 0..N `modifier`-тегов — по ним эмоция
+подбирается в `POST /characters/{id}/emotions/match`. Базовые эмоции: `normal`, `smile`,
+`grin`, `laugh`, `cry`, `sad`, `angry`, `rage`, `serious`, `shy`, `shocked`, `suprize`,
+`scared`, `guilty`, `upset`, `dontlike`, `happy`, `tender`, `calm`; модификаторы: `tears`,
+`evil`, `bruise`, `frightening`.
+
+Одежда (`outfit_style`) тегируется одним `base`-тегом: `pioneer_uniform`, `dress`,
+`swimsuit`, `sports_suit`, `glasses`, `stethoscope`, `coat`, `panama` — подбор
+в `POST /sprites/{id}/outfits/match`.
+
+Если эмоции/одежда уже созданы в БД, но остались без тегов, их дотегирует идемпотентный
+скрипт (недостающие теги создаёт сам, заодно чинит slug'и с опечатками):
+
+```bash
+docker compose -p codex exec app python scripts/tag_assets.py
+docker compose -p codex exec app python scripts/tag_assets.py --only одежда
+```
+
+Правила «slug → теги» лежат в `scripts/tag_assets.py` и продублированы
+в `EMOTION_TAGS` / `OUTFIT_TAGS` в `scripts/build_normal_archive.py`.
 
 ### Структура
 

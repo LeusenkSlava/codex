@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.datastructures import FormData
 from starlette.requests import Request
 
-from src.outbound.admin.views import ADMIN_VIEWS
+from src.outbound.admin.views import ADMIN_TEMPLATES_DIR, ADMIN_VIEWS
 
 
 class CodexAdmin(Admin):
@@ -21,7 +21,7 @@ class CodexAdmin(Admin):
 
 def setup_admin(app: FastAPI, engine: AsyncEngine) -> Admin:
     """Подключает /admin к приложению."""
-    admin = CodexAdmin(app, engine)
+    admin = CodexAdmin(app, engine, templates_dir=ADMIN_TEMPLATES_DIR)
     for view in ADMIN_VIEWS:
         admin.add_view(view)
     return admin

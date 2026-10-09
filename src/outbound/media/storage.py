@@ -23,7 +23,21 @@ class LocalMediaStorage:
         :return: публичный url файла.
         :raises ValueError: если расширение файла не поддерживается.
         """
-        ext = Path(upload.filename or "").suffix.lower()
+        return await self.save_bytes(upload.filename or "", folder, await upload.read())
+
+    async def save_bytes(self, filename: str, folder: str, content: bytes) -> str:
+        """Сохраняет байты файла под уникальным именем.
+
+        Используется при импорте изображений из архива, где файл уже
+        лежит в памяти, а не в UploadFile.
+
+        :param filename: исходное имя файла (нужно расширение).
+        :param folder: подпапка внутри корня медиа.
+        :param content: байты файла.
+        :return: публичный url файла.
+        :raises ValueError: если расширение файла не поддерживается.
+        """
+        ext = Path(filename).suffix.lower()
         if ext not in ALLOWED_EXTENSIONS:
             raise ValueError(
                 f"Недопустимый формат файла {ext!r}, разрешены: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
@@ -32,7 +46,7 @@ class LocalMediaStorage:
         target_dir = self._root / folder
         target_dir.mkdir(parents=True, exist_ok=True)
         name = f"{uuid.uuid4().hex}{ext}"
-        (target_dir / name).write_bytes(await upload.read())
+        (target_dir / name).write_bytes(content)
         return f"{self._base_url}/{folder}/{name}"
 
     def get_path(self, folder: str, filename: str) -> Path | None:
