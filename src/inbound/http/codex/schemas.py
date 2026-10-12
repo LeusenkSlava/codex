@@ -141,3 +141,56 @@ class BackgroundSchema(_Schema):
     description: str
     asset_key: str
     tags: list[TagSchema]
+
+
+class BackgroundTagsResponse(_Schema):
+    """Доступные вселенной теги задников, разделённые по роли (kind).
+
+    `base` — локации (ровно один на задник), `modifiers` — уточнения: время
+    суток, внутри/снаружи, свет, люди и т.п.
+    """
+
+    base: list[TagSchema] = Field(
+        description="Локации (kind=base), встречающиеся у задников вселенной.",
+    )
+    modifiers: list[TagSchema] = Field(
+        description=(
+            "Модификаторы (kind=modifier): время суток, внутри/снаружи, свет, люди."
+        ),
+    )
+
+
+class BackgroundTagsRequest(_Schema):
+    """Тело запроса подбора задника.
+
+    Модель выбирает только смысл и не знает slug'и задников, поэтому отправляет
+    набор тегов-смыслов. Ровно один тег должен иметь `kind=base` (локация),
+    остальные — необязательные уточнения `kind=modifier`.
+    Порядок тегов не важен.
+    """
+
+    tags: list[str] = Field(
+        description=(
+            "Slug'и тегов-смыслов. Ровно один `base` (например `library`, "
+            "`square`, `dining_room`) + 0..N `modifier` (например `night`, "
+            "`inside`, `light_turn_off`). Порядок не важен."
+        ),
+        examples=[["library", "night"], ["library", "inside", "day"]],
+    )
+
+
+class BackgroundMatchItem(_Schema):
+    """Элемент батча подбора задников: вселенная + набор тегов-смыслов."""
+
+    universe_id: int = Field(
+        description="id вселенной, для которой подбирается задник.",
+        examples=[1],
+    )
+    tags: list[str] = Field(
+        description=(
+            "Slug'и тегов-смыслов. Ровно один `base` + 0..N `modifier`. "
+            "Порядок не важен."
+        ),
+        examples=[["library", "night"]],
+    )
+

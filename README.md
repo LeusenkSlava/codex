@@ -18,14 +18,15 @@ Codex хранит «библиотеку» всего, из чего собир
 | **Outfit** | Слой одежды поверх спрайта | спрайту |
 | **Emotion** | Слой лица (эмоция) поверх спрайта | спрайту |
 | **Background** | Задник / локация | вселенной |
-| **Tag** | Теги для подбора: `emotion`, `outfit_style`, `location`, `time_of_day`, `archetype`; у `emotion`-тегов есть `kind`: `base` (ровно один на эмоцию) и `modifier` (0..N); у `outfit_style`-тегов — `base` (ровно один на одежду) | — |
+| **Sound** | Звук: музыка или звуковой эффект (аудиофайл) | вселенной |
+| **Tag** | Теги для подбора: `emotion`, `outfit_style`, `location`, `time_of_day`, `archetype`, `music`, `sfx`; у `emotion`-тегов есть `kind`: `base` (ровно один на эмоцию) и `modifier` (0..N); у `outfit_style`-тегов — `base` (ровно один на одежду) | — |
 
 Возможности:
 
 - **REST API (только чтение)** — списки вселенных, персонажей, спрайтов, эмоций, одежды и задников.
-- **Админка** на `/admin` (sqladmin) — создание и редактирование всех сущностей, загрузка изображений.
+- **Админка** на `/admin` (sqladmin) — создание и редактирование всех сущностей, загрузка изображений и аудио.
 - **Массовый импорт персонажей** — страница «Импорт» в админке: загрузка ZIP-архива с `manifest.json` и картинками, создающего персонажей со спрайтами, одеждой и эмоциями одной операцией.
-- **Раздача медиа** — загруженные изображения сохраняются в папку `media/` и отдаются по `/media/<folder>/<file>`.
+- **Раздача медиа** — загруженные изображения и аудио сохраняются в папку `media/` и отдаются по `/media/<folder>/<file>`.
 - **Healthcheck** — `GET /health`.
 
 Стек: Python 3.12+, FastAPI, SQLAlchemy (async), Alembic, PostgreSQL 18, sqladmin, uv, Docker Compose.
@@ -38,6 +39,9 @@ Codex хранит «библиотеку» всего, из чего собир
 | GET | `/universes/{universe_id}` | Вселенная по id |
 | GET | `/universes/{universe_id}/characters` | Персонажи вселенной |
 | GET | `/universes/{universe_id}/backgrounds` | Задники вселенной |
+| GET | `/universes/{universe_id}/backgrounds/tags` | Теги задников вселенной: локации (`base`) и модификаторы (`modifiers`) отдельными списками |
+| POST | `/universes/{universe_id}/backgrounds/match` | Подбор одного самого подходящего задника по тегам (`{"tags": ["library", "night"]}`: ровно один `base` + 0..N `modifier`) |
+| POST | `/universes/backgrounds/batch` | Батч подбора задников (`[{"universe_id": 1, "tags": [...]}, ...]` → `dict[universe_id, background]`) |
 | GET | `/characters/{character_id}/sprites` | Спрайты персонажа |
 | GET | `/characters/{character_id}/emotions` | Эмоции персонажа по всем его спрайтам |
 | GET | `/characters/{character_id}/emotions/tags` | Теги эмоций персонажа: `base` и `modifiers` отдельными списками |
@@ -46,7 +50,7 @@ Codex хранит «библиотеку» всего, из чего собир
 | GET | `/sprites/{sprite_id}/outfits` | Одежда спрайта |
 | GET | `/characters/{character_id}/outfits/tags` | Теги одежды персонажа (type=outfit_style) без повторений |
 | POST | `/sprites/{sprite_id}/outfits/match` | Подбор одной одежды по тегу (`{"tag": "casual"}`; при нескольких — с наибольшим `id`) |
-| GET | `/media/{folder}/{filename}` | Файл изображения (значение `asset_key`) |
+| GET | `/media/{folder}/{filename}` | Файл медиа: изображение или аудио (значение `asset_key`) |
 | GET | `/health` | Проверка состояния сервиса |
 
 Полная схема — в Swagger: `/docs`.
@@ -130,6 +134,37 @@ docker compose -p codex exec app python scripts/tag_assets.py --only одежд�
 
 Правила «slug → теги» лежат в `scripts/tag_assets.py` и продублированы
 в `EMOTION_TAGS` / `OUTFIT_TAGS` в `scripts/build_normal_archive.py`.
+
+### Теги задников
+
+Задник размечен тегами двух типов, а роль тега задаёт `kind` — как у эмоций:
+ровно один `base` (сама локация: `library`, `square`, `dining_room`, домики, ...)
+и 0..N `modifier` (время суток `morning`/`day`/`evening`/`night`, а также
+`inside`/`outside`, `light_turn_on`/`light_turn_off`, `with_people`/`without_people`,
+`bedroom`).
+
+- `GET /universes/{id}/backgrounds/tags` возвращает доступные вселенной теги,
+  сгруппированные по **роли**: `{"base": [...], "modifiers": [...]}`
+  (внутри — по slug, без повторов).
+- `POST /universes/{id}/backgrounds/match` принимает `{"tags": ["library", "night"]}`:
+  ровно один `base`-тег обязателен. Побеждает задник с большим числом совпавших
+  `modifier`, затем — с меньшим числом лишних `modifier`, при равенстве —
+  с меньшим `id`. Если подходящего задника нет — `404`.
+- `POST /universes/backgrounds/batch` делает то же для списка
+  `[{"universe_id": 1, "tags": [...]}, ...]` и возвращает
+  `{"1": background | null, ...}`.
+
+Примеры: `["library", "inside", "day"]` → `int_library_day`;
+`["library", "night"]` → `int_library_night2` (при равном счёте побеждает меньший `id`);
+`["library", "night", "light_turn_off"]` → `int_library_night`.
+
+Разметку задников и пробелы в slug'ах тегов чинит идемпотентный скрипт
+(по умолчанию только показывает план):
+
+```bash
+docker compose -p codex exec app python scripts/fix_background_tags.py --dry-run
+docker compose -p codex exec app python scripts/fix_background_tags.py
+```
 
 ### Структура
 

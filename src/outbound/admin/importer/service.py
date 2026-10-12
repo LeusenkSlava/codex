@@ -20,7 +20,7 @@ from src.outbound.database.models import (
     UniverseModel,
 )
 from src.outbound.media import media_storage
-from src.outbound.media.storage import ALLOWED_EXTENSIONS
+from src.outbound.media.storage import IMAGE_EXTENSIONS
 
 IMAGE_FOLDERS = {
     "sprite": "sprites",
@@ -317,7 +317,7 @@ class ImportService:
         """Проверяет наличие файлов картинок и их расширения."""
 
         names = set(archive.namelist())
-        allowed = ALLOWED_EXTENSIONS
+        allowed = IMAGE_EXTENSIONS
 
         def check(image: str, where: str) -> None:
             if image not in names:

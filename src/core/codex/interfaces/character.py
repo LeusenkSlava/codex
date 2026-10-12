@@ -1,27 +1,7 @@
 from typing import Protocol
 
 from src.core.codex.models.character import Character, Emotion, Outfit, Sprite
-from src.core.codex.models.enum import TagType
 from src.core.codex.models.tag import Tag
-from src.core.codex.models.universe import Background, Universe
-
-
-class UniverseRepositoryProtocol(Protocol):
-    """Репозиторий вселенных."""
-
-    async def all(self) -> list[Universe]:
-        """Возвращает все вселенные.
-
-        :return: список вселенных.
-        """
-        ...
-
-    async def get(self, universe_id: int) -> Universe:
-        """Возвращает вселенной по id.
-
-        :return: вселенная.
-        """
-        ...
 
 
 class CharacterRepositoryProtocol(Protocol):
@@ -121,37 +101,5 @@ class EmotionRepositoryProtocol(Protocol):
 
         :param character_id: id персонажа.
         :return: список тегов типа emotion (с kind).
-        """
-        ...
-
-
-class BackgroundRepositoryProtocol(Protocol):
-    """Репозиторий задников."""
-
-    async def get_by_universe(self, universe_id: int) -> list[Background]:
-        """Возвращает все задники вселенной.
-
-        :param universe_id: id вселенной.
-        :return: список задников с тегами.
-        """
-        ...
-
-
-class TagRepositoryProtocol(Protocol):
-    """Репозиторий тегов."""
-
-    async def get_by_type(self, tag_type: TagType) -> list[Tag]:
-        """Возвращает все теги указанного типа.
-
-        :param tag_type: тип тега.
-        :return: список тегов.
-        """
-        ...
-
-    async def get_by_slugs(self, slugs: list[str]) -> dict[str, Tag]:
-        """Возвращает emotion-теги по slug'ам.
-
-        :param slugs: slug'и тегов типа emotion.
-        :return: словарь slug -> тег.
         """
         ...

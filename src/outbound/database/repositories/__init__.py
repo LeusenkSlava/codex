@@ -1,10 +1,13 @@
-from src.outbound.database.repositories.codex import (
-    BackgroundRepository,
+from src.outbound.database.repositories.character import (
     CharacterRepository,
     EmotionRepository,
     OutfitRepository,
     SpriteRepository,
-    TagRepository,
+)
+from src.outbound.database.repositories.tag import TagRepository
+from src.outbound.database.repositories.universe import (
+    BackgroundRepository,
+    SoundRepository,
     UniverseRepository,
 )
 
@@ -13,6 +16,7 @@ __all__ = (
     "CharacterRepository",
     "EmotionRepository",
     "OutfitRepository",
+    "SoundRepository",
     "SpriteRepository",
     "TagRepository",
     "UniverseRepository",

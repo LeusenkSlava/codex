@@ -46,4 +46,4 @@ def get_outfit_service(session: SessionDep) -> OutfitService:
 
 
 def get_background_service(session: SessionDep) -> BackgroundService:
-    return BackgroundService(BackgroundRepository(session))
+    return BackgroundService(BackgroundRepository(session), TagRepository(session))

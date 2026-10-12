@@ -5,7 +5,11 @@ from starlette.datastructures import UploadFile
 
 from src.main.config.settings import settings
 
-ALLOWED_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".webp", ".gif"})
+IMAGE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".webp", ".gif"})
+AUDIO_EXTENSIONS = frozenset(
+    {".mp3", ".ogg", ".oga", ".wav", ".m4a", ".aac", ".flac", ".opus"}
+)
+ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS | AUDIO_EXTENSIONS
 
 
 class LocalMediaStorage:

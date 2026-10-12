@@ -13,7 +13,7 @@ from src.outbound.database.models.character import (
     SpriteModel,
 )
 from src.outbound.database.models.tag import TagModel
-from src.outbound.database.models.universe import BackgroundModel
+from src.outbound.database.models.universe import BackgroundModel, SoundModel
 from src.outbound.media import media_storage
 
 
@@ -23,13 +23,22 @@ def _image_preview(model: Any, _attr: Any) -> Markup:
     return Markup('<img src="{}" style="max-height: 80px">').format(model.asset_key)
 
 
-# Цвет бейджа по типу тега (tabler-палитра, тёмный/светлый текст для контраста).
+def _audio_preview(model: Any, _attr: Any) -> Markup:
+    if not model.asset_key:
+        return Markup("")
+    return Markup(
+        '<audio controls preload="none" src="{}" style="max-height: 40px"></audio>'
+    ).format(model.asset_key)
+
+
 _TAG_TYPE_BADGE: dict[TagType, str] = {
     TagType.EMOTION: "bg-red text-white",
     TagType.OUTFIT_STYLE: "bg-blue text-white",
     TagType.LOCATION: "bg-green text-white",
     TagType.TIME_OF_DAY: "bg-yellow text-dark",
     TagType.ARCHETYPE: "bg-purple text-white",
+    TagType.MUSIC: "bg-cyan text-white",
+    TagType.SFX: "bg-orange text-white",
 }
 
 
@@ -45,12 +54,13 @@ def _tags_formatter(model: Any, _attr: Any) -> list[Markup]:
 
 
 class AssetUploadMixin:
-    """Загрузка картинки вместо ручного ввода asset_key.
+    """Загрузка медиафайла вместо ручного ввода asset_key.
 
     Файл сохраняется в папку медиа, в asset_key пишется его url.
     """
 
     asset_folder: ClassVar[str]
+    asset_label: ClassVar[str] = "Изображение"
     asset_field = "file"
 
     column_formatters: ClassVar[dict] = {
@@ -72,7 +82,7 @@ class AssetUploadMixin:
             AssetForm,
             self.asset_field,
             FileField(
-                "Изображение",
+                self.asset_label,
                 description="При редактировании оставьте пустым, чтобы не менять файл.",
             ),
         )
@@ -129,6 +139,7 @@ class MediaCleanupMixin:
                 OutfitModel,
                 EmotionModel,
                 BackgroundModel,
+                SoundModel,
             ):
                 referenced.update(await session.scalars(select(asset_model.asset_key)))
         media_storage.delete_unreferenced(referenced)

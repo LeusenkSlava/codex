@@ -14,17 +14,17 @@ router = APIRouter()
     f"{settings.media.URL.rstrip('/')}/{{folder}}/{{filename}}",
     response_class=FileResponse,
     responses={
-        status.HTTP_200_OK: {"content": {"image/*": {}}},
-        status.HTTP_404_NOT_FOUND: {"description": "Изображение не найдено"},
+        status.HTTP_200_OK: {"content": {"image/*": {}, "audio/*": {}}},
+        status.HTTP_404_NOT_FOUND: {"description": "Файл не найден"},
     },
 )
-async def get_image(
+async def get_media_file(
     folder: str,
     filename: str,
     storage: Annotated[LocalMediaStorage, Depends(get_media_storage)],
 ):
-    """Отдаёт изображение по asset_key (например, /media/sprites/<uuid>.png)."""
+    """Отдаёт медиафайл по asset_key (например, /media/sounds/<uuid>.mp3)."""
     path = storage.get_path(folder, filename)
     if path is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Изображение не найдено")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Файл не найден")
     return FileResponse(path)

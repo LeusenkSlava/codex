@@ -5,14 +5,19 @@ from src.outbound.database.models.character import (
     SpriteModel,
 )
 from src.outbound.database.models.tag import TagModel
-from src.outbound.database.models.universe import BackgroundModel, UniverseModel
+from src.outbound.database.models.universe import (
+    BackgroundModel,
+    SoundModel,
+    UniverseModel,
+)
 
 __all__ = (
+    "BackgroundModel",
     "CharacterModel",
-    "SpriteModel",
-    "OutfitModel",
     "EmotionModel",
+    "OutfitModel",
+    "SoundModel",
+    "SpriteModel",
     "TagModel",
     "UniverseModel",
-    "BackgroundModel",
 )

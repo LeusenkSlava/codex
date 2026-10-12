@@ -2,7 +2,7 @@ from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.outbound.database.models.base_model import BaseModel
-from src.outbound.database.models.tag import TagModel, background_tags
+from src.outbound.database.models.tag import TagModel, background_tags, sound_tags
 
 
 class BackgroundModel(BaseModel):
@@ -17,9 +17,33 @@ class BackgroundModel(BaseModel):
     slug: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     asset_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    sound_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("sounds.id", ondelete="SET NULL"), nullable=True
+    )
 
     universe: Mapped["UniverseModel"] = relationship()
+    sound: Mapped["SoundModel"] = relationship()
     tags: Mapped[list[TagModel]] = relationship(secondary=background_tags)
+
+    def __str__(self) -> str:
+        return self.slug
+
+
+class SoundModel(BaseModel):
+    """Звук: музыка или звуковой эффект."""
+
+    __tablename__ = "sounds"
+    __table_args__ = (UniqueConstraint("universe_id", "slug"),)
+
+    universe_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("universes.id", ondelete="CASCADE"), nullable=False
+    )
+    slug: Mapped[str] = mapped_column(String(150), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    asset_key: Mapped[str] = mapped_column(String(512), nullable=False)
+
+    universe: Mapped["UniverseModel"] = relationship()
+    tags: Mapped[list[TagModel]] = relationship(secondary=sound_tags)
 
     def __str__(self) -> str:
         return self.slug

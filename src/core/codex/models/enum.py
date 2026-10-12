@@ -9,6 +9,8 @@ class TagType(StrEnum):
     LOCATION = "location"  # background: площадь, столовая, пляж, ...
     TIME_OF_DAY = "time_of_day"  # background: morning, day, evening, night
     ARCHETYPE = "archetype"  # character: tsundere, kuudere, genki, ...
+    MUSIC = "music"  # sound: фоновая музыка (calm, battle, sad, ...)
+    SFX = "sfx"  # sound: звуковые эффекты (дождь, выстрел, шаги, ...)
 
 
 class TagKind(StrEnum):

@@ -10,7 +10,11 @@ from src.outbound.admin.views.characters import (
     SpriteAdmin,
 )
 from src.outbound.admin.views.tags import TagAdmin
-from src.outbound.admin.views.universes import BackgroundAdmin, UniverseAdmin
+from src.outbound.admin.views.universes import (
+    BackgroundAdmin,
+    SoundAdmin,
+    UniverseAdmin,
+)
 
 # Каталог с кастомными шаблонами админки (страница импорта).
 ADMIN_TEMPLATES_DIR = str(Path(__file__).resolve().parent.parent / "templates")
@@ -22,6 +26,7 @@ ADMIN_VIEWS = [
     OutfitAdmin,
     EmotionAdmin,
     BackgroundAdmin,
+    SoundAdmin,
     TagAdmin,
     ImporterView,
 ]
