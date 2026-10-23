@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from src.core.codex.models.enum import Gender
 from src.core.codex.models.tag import Tag
 
 
@@ -12,6 +13,7 @@ class Character:
     slug: str
     name: str
     description: str
+    gender: Gender
     speech_style: dict | None = None
     tags: list[Tag] = field(default_factory=list)
 

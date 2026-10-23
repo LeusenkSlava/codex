@@ -130,6 +130,7 @@ class ImportService:
                     slug=character_entry.slug,
                     name=character_entry.name,
                     description=character_entry.description,
+                    gender=character_entry.gender,
                     speech_style=character_entry.speech_style,
                     tags=self._tags_for(
                         character_entry.tags, TagType.ARCHETYPE, tags_by_slug

@@ -23,6 +23,7 @@ class CharacterAdmin(MediaCleanupMixin, ModelView, model=CharacterModel):
         CharacterModel.universe,
         CharacterModel.slug,
         CharacterModel.name,
+        CharacterModel.gender,
         CharacterModel.tags,
     ]
     column_searchable_list = [CharacterModel.slug, CharacterModel.name]
@@ -39,6 +40,7 @@ class CharacterAdmin(MediaCleanupMixin, ModelView, model=CharacterModel):
         CharacterModel.universe,
         CharacterModel.slug,
         CharacterModel.name,
+        CharacterModel.gender,
         CharacterModel.description,
         CharacterModel.speech_style,
         CharacterModel.tags,

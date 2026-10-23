@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.core.codex.models.enum import TagKind, TagType
+from src.core.codex.models.enum import Gender, TagKind, TagType
 
 
 class _Schema(BaseModel):
@@ -28,6 +28,10 @@ class CharacterSchema(_Schema):
     slug: str
     name: str
     description: str
+    gender: Gender = Field(
+        description="Пол персонажа: `male` или `female`.",
+        examples=["female"],
+    )
     speech_style: dict | None
     tags: list[TagSchema]
 

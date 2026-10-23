@@ -1,6 +1,13 @@
 from enum import StrEnum
 
 
+class Gender(StrEnum):
+    """Пол персонажа."""
+
+    MALE = "male"
+    FEMALE = "female"
+
+
 class TagType(StrEnum):
     """Тип тега"""
 

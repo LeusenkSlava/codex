@@ -2,6 +2,7 @@ from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from src.core.codex.models.enum import Gender
 from src.outbound.database.models.base_model import BaseModel
 from src.outbound.database.models.tag import (
     TagModel,
@@ -11,6 +12,7 @@ from src.outbound.database.models.tag import (
     sprite_tags,
 )
 from src.outbound.database.models.universe import UniverseModel
+from src.outbound.database.utils import pg_enum
 
 
 class SpriteModel(BaseModel):
@@ -83,6 +85,8 @@ class CharacterModel(BaseModel):
     slug: Mapped[str] = mapped_column(String(100), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    # пол персонажа: строгий enum male/female
+    gender: Mapped[Gender] = mapped_column(pg_enum(Gender), nullable=False)
 
     speech_style: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 

@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.core.codex.models.enum import Gender
+
 
 class _Entry(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -40,6 +42,7 @@ class CharacterEntry(_Entry):
     slug: str = Field(min_length=1)
     name: str = Field(min_length=1)
     description: str = ""
+    gender: Gender
     speech_style: dict | None = None
     tags: list[str] = Field(default_factory=list)
     sprites: list[SpriteEntry] = Field(default_factory=list)

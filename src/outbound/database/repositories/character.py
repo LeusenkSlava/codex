@@ -40,6 +40,7 @@ class CharacterRepository:
             slug=model.slug,
             name=model.name,
             description=model.description,
+            gender=model.gender,
             speech_style=model.speech_style,
             tags=[TagRepository._to_domain(t) for t in model.tags],
         )
