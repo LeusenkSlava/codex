@@ -75,6 +75,18 @@ class EmotionSchema(_Schema):
     tags: list[TagSchema]
 
 
+class OutfitWithEmotionsSchema(_Schema):
+    """Наряд вместе с эмоциями его спрайта."""
+
+    id: int
+    sprite_id: int
+    slug: str
+    name: str
+    asset_key: str
+    tags: list[TagSchema]
+    emotions: list[EmotionSchema]
+
+
 class EmotionTagsResponse(_Schema):
     """Доступные персонажу emotion-теги, разделённые по роли."""
 
@@ -138,12 +150,43 @@ class EmotionMatchItem(_Schema):
     )
 
 
+class VisualsMatchRequest(_Schema):
+    """Тело запроса подбора спрайта, наряда и эмоции персонажа."""
+
+    outfit_tag: str = Field(
+        description=(
+            "Slug тега одежды (outfit_style). Наряд ищется среди всей одежды "
+            "персонажа; при нескольких подходящих спрайтах предпочитается тот, "
+            "у которого есть эмоция под emotion_tags, затем — наряд с наибольшим id."
+        ),
+        examples=["red-dress"],
+    )
+    emotion_tags: list[str] = Field(
+        description=(
+            "Slug'и emotion-тегов для подбора эмоции на том же спрайте, что и наряд. "
+            "Ровно один `base` + 0..N `modifier`; порядок не важен."
+        ),
+        examples=[["angry", "soft"]],
+    )
+
+
+class VisualsMatchResponse(_Schema):
+    """Подобранные визуальные слои: спрайт, наряд и эмоция (asset_key)."""
+
+    sprite_asset_key: str = Field(description="asset_key спрайта (тело подобранного наряда).")
+    outfit_asset_key: str = Field(description="asset_key подобранного наряда.")
+    emotion_asset_key: str | None = Field(
+        description="asset_key эмоции или null, если подходящая эмоция не найдена.",
+    )
+
+
 class BackgroundSchema(_Schema):
     id: int
     universe_id: int
     slug: str
     description: str
     asset_key: str
+    sound_asset_key: str | None = None
     tags: list[TagSchema]
 
 

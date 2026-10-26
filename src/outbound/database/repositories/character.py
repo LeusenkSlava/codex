@@ -74,6 +74,15 @@ class SpriteRepository:
         )
         return [self._to_domain(m) for m in result]
 
+    async def get_by_id(self, sprite_id: int) -> Sprite | None:
+        stmt = (
+            select(SpriteModel)
+            .where(SpriteModel.id == sprite_id)
+            .options(selectinload(SpriteModel.tags))
+        )
+        model = await self._session.scalar(stmt)
+        return self._to_domain(model) if model else None
+
     @staticmethod
     def _to_domain(model: SpriteModel) -> Sprite:
         return Sprite(
@@ -102,6 +111,20 @@ class OutfitRepository:
         result = await self._session.scalars(stmt)
         return [self._to_domain(m) for m in result]
 
+    async def get_by_character_ids(self, character_ids: list[int]) -> list[Outfit]:
+        if not character_ids:
+            return []
+
+        stmt = (
+            select(OutfitModel)
+            .join(SpriteModel, OutfitModel.sprite_id == SpriteModel.id)
+            .where(SpriteModel.character_id.in_(character_ids))
+            .options(selectinload(OutfitModel.tags))
+            .order_by(SpriteModel.character_id, OutfitModel.id)
+        )
+        result = await self._session.scalars(stmt)
+        return [self._to_domain(m) for m in result]
+
     async def get_by_sprite_and_tag(
         self, sprite_id: int, tag_slug: str
     ) -> Outfit | None:
@@ -120,6 +143,25 @@ class OutfitRepository:
         )
         model = await self._session.scalar(stmt)
         return self._to_domain(model) if model else None
+
+    async def get_by_character_and_tag(
+        self, character_id: int, tag_slug: str
+    ) -> list[Outfit]:
+        stmt = (
+            select(OutfitModel)
+            .join(SpriteModel, OutfitModel.sprite_id == SpriteModel.id)
+            .join(outfit_tags, OutfitModel.id == outfit_tags.c.outfits_id)
+            .join(TagModel, TagModel.id == outfit_tags.c.tag_id)
+            .where(
+                SpriteModel.character_id == character_id,
+                TagModel.slug == tag_slug,
+                TagModel.type == TagType.OUTFIT_STYLE,
+            )
+            .options(selectinload(OutfitModel.tags))
+            .order_by(OutfitModel.id.desc())
+        )
+        result = await self._session.scalars(stmt)
+        return [self._to_domain(m) for m in result]
 
     async def get_tags_by_character(self, character_id: int) -> list[Tag]:
         """Возвращает уникальные outfit-теги всей одежды персонажа.

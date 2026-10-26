@@ -2,20 +2,29 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.core.codex.services import EmotionService, OutfitService, SpriteService
+from src.core.codex.services import (
+    EmotionService,
+    OutfitService,
+    SpriteService,
+    VisualService,
+)
 from src.core.codex.services.emotion import EmotionMatchQuery
 from src.inbound.http.codex.dependencies import (
     get_emotion_service,
     get_outfit_service,
     get_sprite_service,
+    get_visual_service,
 )
 from src.inbound.http.codex.schemas import (
     EmotionMatchItem,
     EmotionSchema,
     EmotionTagsRequest,
     EmotionTagsResponse,
+    OutfitWithEmotionsSchema,
     SpriteSchema,
     TagSchema,
+    VisualsMatchRequest,
+    VisualsMatchResponse,
 )
 
 router = APIRouter(tags=["characters"])
@@ -131,3 +140,49 @@ async def get_outfit_tags(
     service: Annotated[OutfitService, Depends(get_outfit_service)],
 ):
     return await service.get_tags_by_character(character_id)
+
+
+@router.post(
+    "/characters/outfits-with-emotions/batch",
+    response_model=dict[int, list[OutfitWithEmotionsSchema]],
+    summary="Сгруппировать эмоции персонажей по нарядам (батч)",
+    description=(
+        "Принимает список id персонажей и возвращает словарь "
+        "`character_id -> наряды`. К каждому наряду вложен список его эмоций "
+        "(эмоции спрайта, к которому наряд привязан).\n\n"
+        "Если у персонажа нет нарядов, значение равно пустому списку `[]`."
+    ),
+)
+async def get_outfits_with_emotions_batch(
+    character_ids: list[int],
+    service: Annotated[VisualService, Depends(get_visual_service)],
+):
+    """Группирует наряды персонажей вместе с их эмоциями."""
+    return await service.get_outfits_with_emotions_grouped(character_ids)
+
+
+@router.post(
+    "/characters/{character_id}/visuals/match",
+    response_model=VisualsMatchResponse,
+    summary="Подобрать спрайт, наряд и эмоцию персонажа",
+    description=(
+        "Подбирает согласованный набор визуальных слоёв персонажа.\n\n"
+        "Наряд ищется по `(character_id, outfit_tag)` среди всех спрайтов персонажа; "
+        "среди спрайтов, у которых есть такой наряд, предпочитается тот, где также "
+        "есть эмоция под `emotion_tags` (спрайт, наряд и эмоция берутся с одного тела). "
+        "При нескольких подходящих спрайтах выбирается наряд с наибольшим id.\n\n"
+        "Если подходящей эмоции нет ни у одного спрайта, `emotion_asset_key` равен "
+        "`null`; если наряд не найден, возвращается `404`."
+    ),
+    responses={404: {"description": "Наряд не найден"}},
+)
+async def match_visuals(
+    character_id: int,
+    payload: VisualsMatchRequest,
+    service: Annotated[VisualService, Depends(get_visual_service)],
+):
+    """Подбирает спрайт, наряд и эмоцию персонажа."""
+    result = await service.match(character_id, payload.outfit_tag, payload.emotion_tags)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Наряд не найден")
+    return result

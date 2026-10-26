@@ -22,6 +22,7 @@ class Background:
     slug: str
     description: str
     asset_key: str
+    sound_asset_key: str | None
     tags: list[Tag] = field(default_factory=list)
 
 

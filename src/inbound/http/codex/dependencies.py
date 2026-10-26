@@ -10,6 +10,7 @@ from src.core.codex.services import (
     OutfitService,
     SpriteService,
     UniverseService,
+    VisualService,
 )
 from src.outbound.database.dependencies import get_db_session
 from src.outbound.database.repositories import (
@@ -47,3 +48,12 @@ def get_outfit_service(session: SessionDep) -> OutfitService:
 
 def get_background_service(session: SessionDep) -> BackgroundService:
     return BackgroundService(BackgroundRepository(session), TagRepository(session))
+
+
+def get_visual_service(session: SessionDep) -> VisualService:
+    return VisualService(
+        OutfitRepository(session),
+        SpriteRepository(session),
+        EmotionRepository(session),
+        TagRepository(session),
+    )

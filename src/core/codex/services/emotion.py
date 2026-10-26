@@ -23,6 +23,56 @@ class EmotionTags:
     modifiers: list[Tag]
 
 
+def best_emotion(
+    emotions: list[Emotion],
+    tag_slugs: list[str],
+    tags_by_slug: dict[str, Tag],
+    sprite_id: int | None = None,
+) -> Emotion | None:
+    """Выбирает лучшую эмоцию из списка.
+
+    Приоритет: совпадение спрайта -> число совпавших modifier ->
+    меньше лишних modifier -> меньший id. base обязателен и должен быть ровно один.
+    """
+    base_slugs = [
+        slug
+        for slug in tag_slugs
+        if (tag := tags_by_slug.get(slug)) and tag.kind is TagKind.BASE
+    ]
+    modifier_slugs = {
+        slug
+        for slug in tag_slugs
+        if (tag := tags_by_slug.get(slug)) and tag.kind is TagKind.MODIFIER
+    }
+
+    # base обязателен и должен быть ровно один
+    if len(base_slugs) != 1:
+        return None
+    base_slug = base_slugs[0]
+
+    best: Emotion | None = None
+    best_key: tuple[bool, int, int, int] | None = None
+    for emotion in emotions:
+        if base_slug not in {
+            tag.slug for tag in emotion.tags if tag.kind is TagKind.BASE
+        }:
+            continue
+
+        emotion_modifiers = {
+            tag.slug for tag in emotion.tags if tag.kind is TagKind.MODIFIER
+        }
+        matched = len(modifier_slugs & emotion_modifiers)
+        extra = len(emotion_modifiers - modifier_slugs)
+        sprite_match = sprite_id is not None and emotion.sprite_id == sprite_id
+        key = (sprite_match, matched, -extra, -emotion.id)
+
+        if best_key is None or key > best_key:
+            best = emotion
+            best_key = key
+
+    return best
+
+
 class EmotionService:
     """Сервис эмоций."""
 
@@ -69,7 +119,7 @@ class EmotionService:
         """
         tags = await self._tags.get_by_slugs(tag_slugs)
         emotions = await self._repository.get_by_character(character_id)
-        return self._best_match(emotions, tag_slugs, tags, sprite_id)
+        return best_emotion(emotions, tag_slugs, tags, sprite_id)
 
     async def match_batch(
         self, queries: list[EmotionMatchQuery]
@@ -94,7 +144,7 @@ class EmotionService:
             emotions_by_character.setdefault(emotion.character_id, []).append(emotion)
 
         return {
-            query.character_id: self._best_match(
+            query.character_id: best_emotion(
                 emotions_by_character.get(query.character_id, []),
                 query.tags,
                 tags,
@@ -102,53 +152,3 @@ class EmotionService:
             )
             for query in queries
         }
-
-    @staticmethod
-    def _best_match(
-        emotions: list[Emotion],
-        tag_slugs: list[str],
-        tags_by_slug: dict[str, Tag],
-        sprite_id: int | None = None,
-    ) -> Emotion | None:
-        """Выбирает лучшую эмоцию.
-
-        Приоритет: совпадение спрайта -> число совпавших modifier ->
-        меньше лишних modifier -> меньший id. base обязателен и должен быть ровно один.
-        """
-        base_slugs = [
-            slug
-            for slug in tag_slugs
-            if (tag := tags_by_slug.get(slug)) and tag.kind is TagKind.BASE
-        ]
-        modifier_slugs = {
-            slug
-            for slug in tag_slugs
-            if (tag := tags_by_slug.get(slug)) and tag.kind is TagKind.MODIFIER
-        }
-
-        # base обязателен и должен быть ровно один
-        if len(base_slugs) != 1:
-            return None
-        base_slug = base_slugs[0]
-
-        best: Emotion | None = None
-        best_key: tuple[bool, int, int, int] | None = None
-        for emotion in emotions:
-            if base_slug not in {
-                tag.slug for tag in emotion.tags if tag.kind is TagKind.BASE
-            }:
-                continue
-
-            emotion_modifiers = {
-                tag.slug for tag in emotion.tags if tag.kind is TagKind.MODIFIER
-            }
-            matched = len(modifier_slugs & emotion_modifiers)
-            extra = len(emotion_modifiers - modifier_slugs)
-            sprite_match = sprite_id is not None and emotion.sprite_id == sprite_id
-            key = (sprite_match, matched, -extra, -emotion.id)
-
-            if best_key is None or key > best_key:
-                best = emotion
-                best_key = key
-
-        return best

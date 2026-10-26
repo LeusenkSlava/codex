@@ -35,6 +35,14 @@ class SpriteRepositoryProtocol(Protocol):
         """
         ...
 
+    async def get_by_id(self, sprite_id: int) -> Sprite | None:
+        """Возвращает спрайт по id.
+
+        :param sprite_id: id спрайта.
+        :return: спрайт с тегами или None.
+        """
+        ...
+
 
 class OutfitRepositoryProtocol(Protocol):
     """Репозиторий одежды."""
@@ -43,6 +51,14 @@ class OutfitRepositoryProtocol(Protocol):
         """Возвращает всю одежду спрайта.
 
         :param sprite_id: id спрайта.
+        :return: список одежды с тегами.
+        """
+        ...
+
+    async def get_by_character_ids(self, character_ids: list[int]) -> list[Outfit]:
+        """Возвращает одежду нескольких персонажей одной выборкой.
+
+        :param character_ids: id персонажей.
         :return: список одежды с тегами.
         """
         ...
@@ -57,6 +73,19 @@ class OutfitRepositoryProtocol(Protocol):
         :param sprite_id: id спрайта.
         :param tag_slug: slug тега одежды.
         :return: одежда с тегами или None.
+        """
+        ...
+
+    async def get_by_character_and_tag(
+        self, character_id: int, tag_slug: str
+    ) -> list[Outfit]:
+        """Возвращает всю одежду персонажа с указанным тегом.
+
+        Сортировка — по убыванию id одежды.
+
+        :param character_id: id персонажа.
+        :param tag_slug: slug тега одежды.
+        :return: список одежды с тегами.
         """
         ...
 

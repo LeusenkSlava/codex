@@ -50,6 +50,8 @@ Codex хранит «библиотеку» всего, из чего собир
 | GET | `/sprites/{sprite_id}/outfits` | Одежда спрайта |
 | GET | `/characters/{character_id}/outfits/tags` | Теги одежды персонажа (type=outfit_style) без повторений |
 | POST | `/sprites/{sprite_id}/outfits/match` | Подбор одной одежды по тегу (`{"tag": "casual"}`; при нескольких — с наибольшим `id`) |
+| POST | `/characters/outfits-with-emotions/batch` | Батч группировки: `[id, ...]` → `dict[character_id, наряды с вложенными эмоциями]` |
+| POST | `/characters/{character_id}/visuals/match` | Подбор спрайта + наряда + эмоции (`{"outfit_tag": "red-dress", "emotion_tags": ["angry", "soft"]}` → `{sprite_asset_key, outfit_asset_key, emotion_asset_key}`; спрайт/наряд/эмоция берутся с одного тела; эмоция не найдена → `emotion_asset_key: null`, наряд не найден → `404`) |
 | GET | `/media/{folder}/{filename}` | Файл медиа: изображение или аудио (значение `asset_key`) |
 | GET | `/health` | Проверка состояния сервиса |
 

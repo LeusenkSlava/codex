@@ -56,7 +56,7 @@ class BackgroundRepository:
         stmt = (
             select(BackgroundModel)
             .where(BackgroundModel.universe_id == universe_id)
-            .options(selectinload(BackgroundModel.tags))
+            .options(selectinload(BackgroundModel.tags), selectinload(BackgroundModel.sound))
             .order_by(BackgroundModel.id)
         )
         result = await self._session.scalars(stmt)
@@ -69,7 +69,7 @@ class BackgroundRepository:
         stmt = (
             select(BackgroundModel)
             .where(BackgroundModel.universe_id.in_(universe_ids))
-            .options(selectinload(BackgroundModel.tags))
+            .options(selectinload(BackgroundModel.tags), selectinload(BackgroundModel.sound))
             .order_by(BackgroundModel.universe_id, BackgroundModel.id)
         )
         result = await self._session.scalars(stmt)
@@ -79,7 +79,7 @@ class BackgroundRepository:
         stmt = (
             select(BackgroundModel)
             .where(BackgroundModel.id == background_id)
-            .options(selectinload(BackgroundModel.tags))
+            .options(selectinload(BackgroundModel.tags), selectinload(BackgroundModel.sound))
         )
         model = await self._session.scalar(stmt)
         return self._to_domain(model) if model else None
@@ -115,6 +115,7 @@ class BackgroundRepository:
             slug=model.slug,
             description=model.description,
             asset_key=model.asset_key,
+            sound_asset_key=model.sound.asset_key if model.sound else None,
             tags=[TagRepository._to_domain(t) for t in model.tags],
         )
 
