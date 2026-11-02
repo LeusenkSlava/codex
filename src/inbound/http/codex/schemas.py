@@ -22,6 +22,15 @@ class UniverseSchema(_Schema):
     description: str
 
 
+class UniverseListResponse(_Schema):
+    """Страница вселенных с пагинацией и общим числом найденных."""
+
+    items: list[UniverseSchema] = Field(description="Вселенные на текущей странице.")
+    total: int = Field(description="Общее число вселенных, подходящих под фильтр.")
+    offset: int = Field(description="Сколько вселенных пропущено.")
+    limit: int = Field(description="Максимальный размер страницы.")
+
+
 class CharacterSchema(_Schema):
     id: int
     universe_id: int

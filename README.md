@@ -35,7 +35,7 @@ Codex хранит «библиотеку» всего, из чего собир
 
 | Метод | Путь | Описание |
 |---|---|---|
-| GET | `/universes` | Все вселенные |
+| GET | `/universes` | Вселенные с пагинацией и поиском по названию (`?search=&offset=0&limit=20` → `{items, total, offset, limit}`) |
 | GET | `/universes/{universe_id}` | Вселенная по id |
 | GET | `/universes/{universe_id}/characters` | Персонажи вселенной |
 | GET | `/universes/{universe_id}/backgrounds` | Задники вселенной |

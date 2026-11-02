@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -24,11 +24,30 @@ class UniverseRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def all(self) -> list[Universe]:
+    async def search(
+        self, query: str | None = None, offset: int = 0, limit: int = 20
+    ) -> tuple[list[Universe], int]:
+        """Возвращает страницу вселенных и их общее число.
+
+        :param query: необязательная подстрока для поиска по названию (title),
+            без учёта регистра.
+        :param offset: сколько вселенных пропустить.
+        :param limit: максимальное число вселенных в странице.
+        :return: кортеж ``(вселенные, всего найдено)``.
+        """
+        stmt = select(UniverseModel)
+        count_stmt = select(func.count()).select_from(UniverseModel)
+
+        if query:
+            pattern = f"%{query}%"
+            stmt = stmt.where(UniverseModel.title.ilike(pattern))
+            count_stmt = count_stmt.where(UniverseModel.title.ilike(pattern))
+
+        total = await self._session.scalar(count_stmt) or 0
         result = await self._session.scalars(
-            select(UniverseModel).order_by(UniverseModel.id)
+            stmt.order_by(UniverseModel.id).offset(offset).limit(limit)
         )
-        return [self._to_domain(model) for model in result.all()]
+        return [self._to_domain(model) for model in result.all()], total
 
     async def get(self, universe_id: int) -> Universe | None:
         model = await self._session.scalar(

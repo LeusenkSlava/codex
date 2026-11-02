@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.core.codex.services import (
     BackgroundService,
@@ -19,17 +19,28 @@ from src.inbound.http.codex.schemas import (
     BackgroundTagsRequest,
     BackgroundTagsResponse,
     CharacterSchema,
+    UniverseListResponse,
     UniverseSchema,
 )
 
 router = APIRouter(tags=["universes"])
 
 
-@router.get("/universes", response_model=list[UniverseSchema])
+@router.get("/universes", response_model=UniverseListResponse)
 async def universes_list(
     service: Annotated[UniverseService, Depends(get_universe_service)],
+    search: Annotated[
+        str | None,
+        Query(description="Подстрока для поиска по названию (title), без учёта регистра."),
+    ] = None,
+    offset: Annotated[int, Query(ge=0, description="Сколько вселенных пропустить.")] = 0,
+    limit: Annotated[
+        int,
+        Query(ge=1, le=100, description="Максимальное число вселенных в странице."),
+    ] = 20,
 ):
-    return await service.all()
+    items, total = await service.search(query=search, offset=offset, limit=limit)
+    return UniverseListResponse(items=items, total=total, offset=offset, limit=limit)
 
 
 # TODO Возвращает None вместо 404
