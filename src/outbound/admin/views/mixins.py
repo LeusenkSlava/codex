@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, ClassVar
 
 from markupsafe import Markup
@@ -13,14 +14,23 @@ from src.outbound.database.models.character import (
     SpriteModel,
 )
 from src.outbound.database.models.tag import TagModel
-from src.outbound.database.models.universe import BackgroundModel, SoundModel
+from src.outbound.database.models.universe import (
+    BackgroundModel,
+    SoundModel,
+    UniverseModel,
+)
 from src.outbound.media import media_storage
 
 
-def _image_preview(model: Any, _attr: Any) -> Markup:
-    if not model.asset_key:
+def _image_preview(model: Any, attr: Any) -> Markup:
+    # sqladmin передаёт в форматтер имя свойства, поэтому картинкой может быть
+    # любое поле (asset_key у ассетов, cover_asset_key у вселенной).
+    url = getattr(model, attr, None) if isinstance(attr, str) else None
+    if not url:
+        url = getattr(model, "asset_key", None)
+    if not url:
         return Markup("")
-    return Markup('<img src="{}" style="max-height: 80px">').format(model.asset_key)
+    return Markup('<img src="{}" style="max-height: 80px">').format(url)
 
 
 def _audio_preview(model: Any, _attr: Any) -> Markup:
@@ -56,12 +66,17 @@ def _tags_formatter(model: Any, _attr: Any) -> list[Markup]:
 class AssetUploadMixin:
     """Загрузка медиафайла вместо ручного ввода asset_key.
 
-    Файл сохраняется в папку медиа, в asset_key пишется его url.
+    Файл сохраняется в папку медиа, в asset_attribute пишется его url.
+    По умолчанию это ``asset_key``; у вселенной — ``cover_asset_key``.
     """
 
     asset_folder: ClassVar[str]
+    asset_attribute: ClassVar[str] = "asset_key"
+    asset_required: ClassVar[bool] = True
     asset_label: ClassVar[str] = "Изображение"
-    asset_field = "file"
+    asset_field: ClassVar[str] = "file"
+    # необязательное ограничение по расширениям (например, только картинки)
+    asset_extensions: ClassVar[frozenset[str] | None] = None
 
     column_formatters: ClassVar[dict] = {
         "asset_key": _image_preview,
@@ -93,14 +108,27 @@ class AssetUploadMixin:
     ) -> None:
         upload = data.pop(self.asset_field, None)
         if isinstance(upload, UploadFile) and upload.filename:
-            old_url = None if is_created else model.asset_key
-            data["asset_key"] = await media_storage.save(upload, self.asset_folder)
+            ext = Path(upload.filename).suffix.lower()
+            if self.asset_extensions is not None and ext not in self.asset_extensions:
+                raise ValueError(
+                    f"Недопустимый формат файла {ext!r}, разрешены: "
+                    f"{', '.join(sorted(self.asset_extensions))}"
+                )
+            old_url = (
+                None if is_created else getattr(model, self.asset_attribute, None)
+            )
+            data[self.asset_attribute] = await media_storage.save(
+                upload, self.asset_folder
+            )
             media_storage.delete(old_url)
-        elif is_created:
-            raise ValueError("Загрузите изображение")
+        elif is_created and self.asset_required:
+            raise ValueError(f"Загрузите {self.asset_label.lower()}")
 
     async def after_model_delete(self, model: Any, request: Request) -> None:
-        media_storage.delete(model.asset_key)
+        # файл удаляем до вызова super(): следующий миксин чистит медиа по
+        # ссылкам из БД, и удалённый файл должен быть уже недоступен
+        media_storage.delete(getattr(model, self.asset_attribute, None))
+        await super().after_model_delete(model, request)  # type: ignore[misc]
 
 
 class TagTypeFilterMixin:
@@ -142,4 +170,8 @@ class MediaCleanupMixin:
                 SoundModel,
             ):
                 referenced.update(await session.scalars(select(asset_model.asset_key)))
+            # обложки вселенных тоже лежат в медиа: без них cleanup удалил бы их
+            # при любом удалении через админку
+            covers = await session.scalars(select(UniverseModel.cover_asset_key))
+            referenced.update(cover for cover in covers if cover)
         media_storage.delete_unreferenced(referenced)

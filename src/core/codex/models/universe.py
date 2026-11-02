@@ -11,6 +11,7 @@ class Universe:
     slug: str
     title: str
     description: str
+    cover_asset_key: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -7,6 +7,7 @@ from src.outbound.admin.views.mixins import (
     MediaCleanupMixin,
     TagTypeFilterMixin,
     _audio_preview,
+    _image_preview,
     _tags_formatter,
 )
 from src.outbound.database.models.universe import (
@@ -14,11 +15,28 @@ from src.outbound.database.models.universe import (
     SoundModel,
     UniverseModel,
 )
+from src.outbound.media.storage import IMAGE_EXTENSIONS
 
 
-class UniverseAdmin(MediaCleanupMixin, ModelView, model=UniverseModel):
-    column_list = [UniverseModel.id, UniverseModel.slug, UniverseModel.title]
+class UniverseAdmin(
+    AssetUploadMixin, MediaCleanupMixin, ModelView, model=UniverseModel
+):
+    asset_folder = "universes"
+    asset_attribute = "cover_asset_key"
+    asset_label = "Обложка"
+    asset_extensions = IMAGE_EXTENSIONS
+    # обложка необязательна: вселенные можно создавать и без картинки
+    asset_required = False
+    column_list = [
+        UniverseModel.id,
+        UniverseModel.slug,
+        UniverseModel.title,
+        UniverseModel.cover_asset_key,
+    ]
     column_searchable_list = [UniverseModel.slug, UniverseModel.title]
+    column_formatters = {"cover_asset_key": _image_preview}
+    column_formatters_detail = {"cover_asset_key": _image_preview}
+    column_labels = {"cover_asset_key": "Обложка"}
     form_columns = [
         UniverseModel.slug,
         UniverseModel.title,

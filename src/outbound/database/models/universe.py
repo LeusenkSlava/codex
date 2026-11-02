@@ -55,6 +55,8 @@ class UniverseModel(BaseModel):
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    # обложка вселенной: url файла в медиа-хранилище (например, /media/universes/<uuid>.png)
+    cover_asset_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     def __str__(self) -> str:
         return self.title

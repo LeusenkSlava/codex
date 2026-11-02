@@ -20,6 +20,14 @@ class UniverseSchema(_Schema):
     slug: str
     title: str
     description: str
+    cover_asset_key: str | None = Field(
+        default=None,
+        description=(
+            "URL обложки вселенной (например, `/media/universes/<uuid>.png`) "
+            "или `null`, если обложка не загружена."
+        ),
+        examples=["/media/universes/6d6bd9c091b44c719149152ef007d6eb.png"],
+    )
 
 
 class UniverseListResponse(_Schema):

@@ -62,6 +62,7 @@ class UniverseRepository:
             slug=model.slug,
             title=model.title,
             description=model.description,
+            cover_asset_key=model.cover_asset_key,
         )
 
 
