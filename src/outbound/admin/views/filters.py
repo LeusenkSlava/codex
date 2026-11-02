@@ -7,6 +7,7 @@ from sqladmin.filters import get_parameter_name, get_title
 from starlette.requests import Request
 
 from src.core.codex.models.enum import TagType
+from src.outbound.admin.scope import get_active_universe_id, scope_where
 from src.outbound.database.models.tag import TagModel
 
 
@@ -87,7 +88,14 @@ class ForeignKeyObjectFilter:
         model: Any,
         run_query: Any,
     ) -> list[tuple[str, str]]:
-        rows = await run_query(select(self.foreign_model).distinct())
+        # Варианты фильтра тоже подчиняются активной вселенной: у одежды и
+        # эмоций список «Спрайт» не должен предлагать спрайты чужих вселенных.
+        stmt = (
+            select(self.foreign_model)
+            .where(scope_where(self.foreign_model, get_active_universe_id(request)))
+            .distinct()
+        )
+        rows = await run_query(stmt)
         return [("__all", "All")] + [
             (str(obj.id), str(obj)) for (obj,) in rows
         ]

@@ -6,6 +6,7 @@ from src.outbound.admin.views.mixins import (
     AssetUploadMixin,
     MediaCleanupMixin,
     TagTypeFilterMixin,
+    UniverseScopedMixin,
     _audio_preview,
     _image_preview,
     _tags_formatter,
@@ -48,8 +49,16 @@ class UniverseAdmin(
 
 
 class BackgroundAdmin(
-    TagTypeFilterMixin, AssetUploadMixin, ModelView, model=BackgroundModel
+    UniverseScopedMixin,
+    TagTypeFilterMixin,
+    AssetUploadMixin,
+    ModelView,
+    model=BackgroundModel,
 ):
+    # В форме создания поле «Вселенная» подставляется из активной вселенной.
+    universe_default_field = "universe"
+    # Селектор звука: все звуки выбранной вселенной, поиск необязателен.
+    scoped_relation_fields = ("sound",)
     tag_types = (TagType.LOCATION, TagType.TIME_OF_DAY)
     asset_folder = "backgrounds"
     column_list = [
@@ -82,7 +91,9 @@ class BackgroundAdmin(
     icon = "fa-solid fa-panorama"
 
 
-class SoundAdmin(TagTypeFilterMixin, AssetUploadMixin, ModelView, model=SoundModel):
+class SoundAdmin(UniverseScopedMixin, TagTypeFilterMixin, AssetUploadMixin, ModelView, model=SoundModel):
+    # В форме создания поле «Вселенная» подставляется из активной вселенной.
+    universe_default_field = "universe"
     tag_types = (TagType.MUSIC, TagType.SFX)
     asset_folder = "sounds"
     asset_label = "Аудиофайл"

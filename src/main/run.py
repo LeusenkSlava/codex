@@ -7,6 +7,7 @@ from src.inbound.http.router import make_fastapi_root_router
 from src.main.config.logging import setup_logging
 from src.main.config.settings import settings
 from src.main.setup.admin import setup_admin
+from src.outbound.admin.scope import UniverseScopeMiddleware
 from src.outbound.database.session import engine
 
 setup_logging()
@@ -36,5 +37,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Кладёт активную вселенную админки в contextvar (для формы создания).
+app.add_middleware(UniverseScopeMiddleware)
 
 app.include_router(make_fastapi_root_router(debug_mode=settings.app.DEBUG_MODE))

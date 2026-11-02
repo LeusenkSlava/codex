@@ -2,12 +2,19 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from markupsafe import Markup
-from sqlalchemy import select
+from sqlalchemy import Select, inspect as sqlalchemy_inspect, or_, select
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from wtforms import FileField, Form
 
 from src.core.codex.models.enum import TagType
+from src.outbound.admin.scope import (
+    current_request,
+    current_universe_id,
+    get_active_universe_id,
+    scope_list_query,
+    scope_where,
+)
 from src.outbound.database.models.character import (
     EmotionModel,
     OutfitModel,
@@ -130,6 +137,109 @@ class AssetUploadMixin:
         # а этого файла там уже быть не должно — иначе он останется сиротой.
         media_storage.delete(getattr(model, self.asset_attribute, None))
         await super().after_model_delete(model, request)  # type: ignore[misc]
+
+
+def _current_edit_pk() -> int | None:
+    """id редактируемой записи из пути ``.../edit/{pk}`` (иначе ``None``)."""
+    request = current_request()
+    if request is None:
+        return None
+    try:
+        return int(request.path_params["pk"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+class UniverseScopedMixin:
+    """Ограничивает список записей активной вселенной (переключатель в шапке).
+
+    Наследуется вьюхами сущностей, привязанных к вселенной напрямую или
+    через цепочку персонаж -> спрайт. Сами вселенные и теги не скопируются.
+
+    Поля из ``scoped_relation_fields`` (MANYTOONE-связи) тоже наполняются
+    вариантами выбранной вселенной. Это обычный ``<select>`` со всеми
+    вариантами сразу — поиск по нему необязателен (его делает select2 на
+    клиенте), в отличие от ``form_ajax_refs``, где без ввода символов
+    список оставался пустым.
+    """
+
+    # Имя поля-вселенной во форме: если задано, при создании оно
+    # подставляется из активной вселенной (например, "universe").
+    universe_default_field: ClassVar[str | None] = None
+    # MANYTOONE-связи, варианты которых ограничиваем активной вселенной.
+    scoped_relation_fields: ClassVar[tuple[str, ...]] = ()
+
+    def list_query(self, request: Request) -> Select:
+        stmt = super().list_query(request)  # type: ignore[misc]
+        universe_id = get_active_universe_id(request)
+        if universe_id is not None:
+            stmt = scope_list_query(stmt, self.model, universe_id)  # type: ignore[attr-defined]
+        return stmt
+
+    async def scaffold_form(self, rules: list[str] | None = None) -> type[Form]:
+        # Экземпляр вьюхи переиспользуется между запросами, поэтому берём
+        # копию form_args и пересобираем динамические поля каждый раз —
+        # иначе значения залипали бы после смены вселенной.
+        form_args = dict(self.form_args)  # type: ignore[attr-defined]
+        universe_id = current_universe_id()
+
+        if self.universe_default_field:
+            # default применяется только к пустой форме (создание); при
+            # редактировании sqladmin подставляет данные объекта, и они
+            # побеждают default.
+            class_args = type(self).form_args  # type: ignore[attr-defined]
+            field_args = dict(class_args.get(self.universe_default_field, {}))
+            if universe_id is not None:
+                field_args["default"] = str(universe_id)
+            else:
+                field_args.pop("default", None)
+            form_args[self.universe_default_field] = field_args
+
+        for field_name in self.scoped_relation_fields:
+            field_args = dict(form_args.get(field_name, {}))
+            field_args["data"] = await self._scoped_relation_choices(field_name)
+            # data-role подхватывает layout.html: select2 с локальными
+            # вариантами и необязательным поиском по подстроке.
+            field_args["render_kw"] = {
+                **field_args.get("render_kw", {}),
+                "class": "form-control",
+                "data-role": "select2-local",
+                "data-placeholder": "Не выбрано",
+            }
+            field_args["description"] = (
+                "Показаны объекты выбранной вселенной; поиск необязателен."
+            )
+            form_args[field_name] = field_args
+
+        self.form_args = form_args  # type: ignore[assignment]
+        return await super().scaffold_form(rules)  # type: ignore[misc]
+
+    async def _scoped_relation_choices(self, field_name: str) -> list[tuple[str, str]]:
+        """Варианты FK-поля: объекты выбранной вселенной + текущая связь."""
+        mapper = sqlalchemy_inspect(self.model)  # type: ignore[attr-defined]
+        relation = mapper.relationships[field_name]
+        target = relation.mapper.class_
+        stmt = select(target)
+        scope = scope_where(target, current_universe_id())
+
+        edit_pk = _current_edit_pk()
+        if edit_pk is not None and len(relation.local_columns) == 1:
+            # При редактировании текущая связь должна остаться в списке,
+            # даже если объект не попал в скоп (например, после смены
+            # вселенной) — иначе сохранение молча переписало бы её.
+            fk_column = next(iter(relation.local_columns))
+            current_fk = select(fk_column).where(
+                self.model.id == edit_pk  # type: ignore[attr-defined]
+            )
+            stmt = stmt.where(or_(scope, target.id.in_(current_fk)))
+        else:
+            stmt = stmt.where(scope)
+
+        async with self.session_maker() as session:  # type: ignore[attr-defined]
+            objects = (await session.scalars(stmt)).unique().all()
+
+        choices = {str(obj.id): str(obj) for obj in objects}
+        return sorted(choices.items(), key=lambda item: item[1].casefold())
 
 
 class TagTypeFilterMixin:

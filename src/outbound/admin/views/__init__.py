@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from src.outbound.admin.importer.view import ImporterView
+from src.outbound.admin.switcher import UniverseScopeView
 from src.outbound.admin.views.characters import (
     CharacterAdmin,
     EmotionAdmin,
@@ -29,4 +30,5 @@ ADMIN_VIEWS = [
     SoundAdmin,
     TagAdmin,
     ImporterView,
+    UniverseScopeView,
 ]

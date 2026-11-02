@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.datastructures import FormData
 from starlette.requests import Request
 
+from src.outbound.admin.switcher import universe_switcher
 from src.outbound.admin.views import ADMIN_TEMPLATES_DIR, ADMIN_VIEWS
 
 
@@ -25,4 +26,6 @@ def setup_admin(app: FastAPI, engine: AsyncEngine) -> Admin:
     admin = CodexAdmin(app, engine, templates_dir=ADMIN_TEMPLATES_DIR)
     for view in ADMIN_VIEWS:
         admin.add_view(view)
+    # Переключатель вселенной доступен из общего layout каждой страницы.
+    admin.templates.env.globals["universe_switcher"] = universe_switcher
     return admin

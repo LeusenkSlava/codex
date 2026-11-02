@@ -32,7 +32,7 @@ class SpriteModel(BaseModel):
     tags: Mapped[list[TagModel]] = relationship(secondary=sprite_tags)
 
     def __str__(self) -> str:
-        return f"{self.character.name} / {self.slug}"
+        return f"{self.character.universe.title} / {self.character.name} / {self.slug}"
 
 
 class OutfitModel(BaseModel):
@@ -90,8 +90,9 @@ class CharacterModel(BaseModel):
 
     speech_style: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
-    universe: Mapped["UniverseModel"] = relationship()
+    universe: Mapped["UniverseModel"] = relationship(lazy="joined")
+
     tags: Mapped[list[TagModel]] = relationship(secondary=character_tags)
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.universe.title} / {self.name}"

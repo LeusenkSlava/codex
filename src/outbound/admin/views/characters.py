@@ -6,6 +6,7 @@ from src.outbound.admin.views.mixins import (
     AssetUploadMixin,
     MediaCleanupMixin,
     TagTypeFilterMixin,
+    UniverseScopedMixin,
     _tags_formatter,
 )
 from src.outbound.database.models.character import (
@@ -17,7 +18,9 @@ from src.outbound.database.models.character import (
 from src.outbound.database.models.universe import UniverseModel
 
 
-class CharacterAdmin(MediaCleanupMixin, ModelView, model=CharacterModel):
+class CharacterAdmin(UniverseScopedMixin, MediaCleanupMixin, ModelView, model=CharacterModel):
+    # В форме создания поле «Вселенная» подставляется из активной вселенной.
+    universe_default_field = "universe"
     column_list = [
         CharacterModel.id,
         CharacterModel.universe,
@@ -49,7 +52,9 @@ class CharacterAdmin(MediaCleanupMixin, ModelView, model=CharacterModel):
     icon = "fa-solid fa-user"
 
 
-class SpriteAdmin(MediaCleanupMixin, AssetUploadMixin, ModelView, model=SpriteModel):
+class SpriteAdmin(UniverseScopedMixin, MediaCleanupMixin, AssetUploadMixin, ModelView, model=SpriteModel):
+    # Селектор персонажа: все персонажи выбранной вселенной, поиск необязателен.
+    scoped_relation_fields = ("character",)
     asset_folder = "sprites"
     column_list = [
         SpriteModel.id,
@@ -74,7 +79,9 @@ class SpriteAdmin(MediaCleanupMixin, AssetUploadMixin, ModelView, model=SpriteMo
     icon = "fa-solid fa-image"
 
 
-class OutfitAdmin(TagTypeFilterMixin, AssetUploadMixin, ModelView, model=OutfitModel):
+class OutfitAdmin(UniverseScopedMixin, TagTypeFilterMixin, AssetUploadMixin, ModelView, model=OutfitModel):
+    # Селектор спрайта: все спрайты выбранной вселенной, поиск необязателен.
+    scoped_relation_fields = ("sprite",)
     tag_types = (TagType.OUTFIT_STYLE,)
     asset_folder = "outfits"
     column_list = [
@@ -100,7 +107,9 @@ class OutfitAdmin(TagTypeFilterMixin, AssetUploadMixin, ModelView, model=OutfitM
     icon = "fa-solid fa-shirt"
 
 
-class EmotionAdmin(TagTypeFilterMixin, AssetUploadMixin, ModelView, model=EmotionModel):
+class EmotionAdmin(UniverseScopedMixin, TagTypeFilterMixin, AssetUploadMixin, ModelView, model=EmotionModel):
+    # Селектор спрайта: все спрайты выбранной вселенной, поиск необязателен.
+    scoped_relation_fields = ("sprite",)
     tag_types = (TagType.EMOTION,)
     asset_folder = "emotions"
     column_list = [
