@@ -13,7 +13,15 @@ from src.inbound.http.health.schemas import (
 router = APIRouter()
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get(
+    "/health",
+    response_model=HealthResponse,
+    summary="Состояние сервиса",
+    description=(
+        "Проверяет зависимости сервиса (сейчас — PostgreSQL). `status=unhealthy`, "
+        "если хотя бы одна проверка не прошла."
+    ),
+)
 async def health_check(
     health_service: Annotated[HealthService, Depends(get_health_service)],
     checkers: Annotated[dict, Depends(get_health_checkers)],

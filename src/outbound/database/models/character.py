@@ -16,7 +16,7 @@ from src.outbound.database.utils import pg_enum
 
 
 class SpriteModel(BaseModel):
-    """Спрайт (базовый слой персонажа: тело/поза)"""
+    """Спрайт — базовый слой персонажа: тело и поза."""
 
     __tablename__ = "sprites"
     __table_args__ = (UniqueConstraint("character_id", "slug"),)
@@ -27,7 +27,7 @@ class SpriteModel(BaseModel):
     slug: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     asset_key: Mapped[str] = mapped_column(String(512), nullable=False)
-    # joined: персонаж нужен в __str__ (подпись спрайта в выпадающих списках админки)
+    # eager-load: персонаж нужен в __str__ (подпись спрайта в списках админки).
     character: Mapped["CharacterModel"] = relationship(lazy="joined")
     tags: Mapped[list[TagModel]] = relationship(secondary=sprite_tags)
 
@@ -36,7 +36,7 @@ class SpriteModel(BaseModel):
 
 
 class OutfitModel(BaseModel):
-    """Одежда (слой поверх спрайта)"""
+    """Одежда — слой поверх спрайта."""
 
     __tablename__ = "outfits"
     __table_args__ = (UniqueConstraint("sprite_id", "slug"),)
@@ -55,7 +55,7 @@ class OutfitModel(BaseModel):
 
 
 class EmotionModel(BaseModel):
-    """Эмоция (слой лица поверх спрайта)"""
+    """Эмоция — слой лица поверх спрайта."""
 
     __tablename__ = "emotions"
     __table_args__ = (UniqueConstraint("sprite_id", "slug"),)
@@ -74,7 +74,7 @@ class EmotionModel(BaseModel):
 
 
 class CharacterModel(BaseModel):
-    """Персонаж"""
+    """Персонаж вселенной."""
 
     __tablename__ = "characters"
     __table_args__ = (UniqueConstraint("universe_id", "slug"),)
@@ -85,7 +85,7 @@ class CharacterModel(BaseModel):
     slug: Mapped[str] = mapped_column(String(100), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    # пол персонажа: строгий enum male/female
+    # строгий enum: male/female
     gender: Mapped[Gender] = mapped_column(pg_enum(Gender), nullable=False)
 
     speech_style: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

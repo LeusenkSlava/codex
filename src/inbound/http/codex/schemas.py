@@ -22,18 +22,16 @@ class UniverseSchema(_Schema):
     description: str
     cover_asset_key: str | None = Field(
         default=None,
-        description="URL обложки или `null`, если она не загружена.",
+        description="URL обложки или `null`, если её нет.",
         examples=["/media/universes/6d6bd9c091b44c719149152ef007d6eb.png"],
     )
 
 
 class UniverseListResponse(_Schema):
-    """Страница вселенных."""
-
-    items: list[UniverseSchema] = Field(description="Вселенные на странице.")
+    items: list[UniverseSchema] = Field(description="Вселенные текущей страницы.")
     total: int = Field(description="Всего вселенных по фильтру.")
-    offset: int = Field(description="Сколько пропущено.")
-    limit: int = Field(description="Размер страницы.")
+    offset: int = Field(description="Значение параметра `offset` запроса.")
+    limit: int = Field(description="Значение параметра `limit` запроса.")
 
 
 class CharacterSchema(_Schema):
@@ -42,7 +40,7 @@ class CharacterSchema(_Schema):
     slug: str
     name: str
     description: str
-    gender: Gender = Field(description="`male` или `female`.", examples=["female"])
+    gender: Gender = Field(examples=["female"])
     speech_style: dict | None
     tags: list[TagSchema]
 
@@ -66,12 +64,10 @@ class OutfitSchema(_Schema):
 
 
 class OutfitMatchRequest(_Schema):
-    """Тело запроса подбора одежды."""
-
     tag: str = Field(
         description=(
-            "Slug тега одежды (`outfit_style`). При нескольких совпадениях "
-            "вернётся одежда с большим `id`."
+            "Slug тега `outfit_style`. При нескольких совпадениях берётся одежда "
+            "с большим `id`."
         ),
         examples=["casual"],
     )
@@ -87,10 +83,8 @@ class EmotionSchema(_Schema):
 
 
 class OutfitEmotionSchema(_Schema):
-    """Эмоция, доступная для одежды."""
-
-    slug: str = Field(description="Slug emotion-тега.", examples=["rage"])
-    name: str = Field(description="Название emotion-тега.", examples=["Кричит"])
+    slug: str = Field(description="Slug тега `emotion`.", examples=["rage"])
+    name: str = Field(description="Название тега.", examples=["Кричит"])
     kind: TagKind | None = Field(
         default=None,
         description="`base` или `modifier`.",
@@ -99,41 +93,31 @@ class OutfitEmotionSchema(_Schema):
 
 
 class OutfitWithEmotionsSchema(_Schema):
-    """Тег стиля одежды и доступные для него эмоции."""
-
     outfit_tag: str = Field(
-        description="Slug тега стиля одежды (`outfit_style`, `kind=base`).",
+        description="Slug тега `outfit_style` с `kind=base`.",
         examples=["camp_uniform"],
     )
     name: str = Field(
-        description="Название тега стиля одежды.",
+        description="Название тега.",
         examples=["Форма вожатого"],
     )
     emotions: list[OutfitEmotionSchema] = Field(
-        description="Emotion-теги одежды: сначала `base`, затем `modifier`.",
+        description=(
+            "Теги эмоций, доступных для одежды с этим тегом: сначала `base`, "
+            "затем `modifier`."
+        ),
     )
 
 
 class EmotionTagsResponse(_Schema):
-    """Emotion-теги персонажа по роли."""
-
-    base: list[TagSchema] = Field(
-        description="Базовые эмоции (`kind=base`).",
-    )
-    modifiers: list[TagSchema] = Field(
-        description="Уточнения (`kind=modifier`).",
-    )
+    base: list[TagSchema] = Field(description="Теги с `kind=base`.")
+    modifiers: list[TagSchema] = Field(description="Теги с `kind=modifier`.")
 
 
 class EmotionTagsRequest(_Schema):
-    """Тело запроса подбора эмоции.
-
-    Ровно один тег должен быть `base`, остальные — `modifier`.
-    """
-
     sprite_id: int | None = Field(
         default=None,
-        description="id спрайта: его эмоции получают приоритет.",
+        description="Если указан, эмоции этого спрайта получают приоритет.",
         examples=[1],
     )
     tags: list[str] = Field(
@@ -143,15 +127,13 @@ class EmotionTagsRequest(_Schema):
 
 
 class EmotionMatchItem(_Schema):
-    """Элемент батча подбора эмоций."""
-
     character_id: int = Field(
         description="id персонажа.",
         examples=[1],
     )
     sprite_id: int | None = Field(
         default=None,
-        description="id спрайта: его эмоции получают приоритет.",
+        description="Если указан, эмоции этого спрайта получают приоритет.",
         examples=[1],
     )
     tags: list[str] = Field(
@@ -161,21 +143,17 @@ class EmotionMatchItem(_Schema):
 
 
 class VisualsMatchRequest(_Schema):
-    """Тело запроса подбора спрайта, наряда и эмоции."""
-
     outfit_tag: str = Field(
-        description="Slug тега одежды (`outfit_style`).",
+        description="Slug тега `outfit_style`.",
         examples=["red-dress"],
     )
     emotion_tags: list[str] = Field(
-        description="Slug'и emotion-тегов: ровно один `base` + 0..N `modifier`.",
+        description="Slug'и тегов `emotion`: ровно один `base` + 0..N `modifier`.",
         examples=[["angry", "soft"]],
     )
 
 
 class VisualsMatchResponse(_Schema):
-    """Подобранные визуальные слои."""
-
     sprite_asset_key: str = Field(description="asset_key спрайта.")
     outfit_asset_key: str = Field(description="asset_key наряда.")
     emotion_asset_key: str | None = Field(
@@ -194,36 +172,29 @@ class BackgroundSchema(_Schema):
 
 
 class BackgroundTagsResponse(_Schema):
-    """Теги задников вселенной по роли."""
-
-    base: list[TagSchema] = Field(
-        description="Локации (`kind=base`).",
-    )
-    modifiers: list[TagSchema] = Field(
-        description="Уточнения (`kind=modifier`).",
-    )
+    base: list[TagSchema] = Field(description="Теги с `kind=base` (локации).")
+    modifiers: list[TagSchema] = Field(description="Теги с `kind=modifier`.")
 
 
 class BackgroundTagsRequest(_Schema):
-    """Тело запроса подбора задника.
-
-    Ровно один тег должен быть `base` (локация), остальные — `modifier`.
-    """
-
     tags: list[str] = Field(
-        description="Slug'и тегов: ровно один `base` + 0..N `modifier`.",
+        description=(
+            "Slug'и тегов `location` и `time_of_day`: ровно один `base` + 0..N "
+            "`modifier`."
+        ),
         examples=[["library", "night"], ["library", "inside", "day"]],
     )
 
 
 class BackgroundMatchItem(_Schema):
-    """Элемент батча подбора задников."""
-
     universe_id: int = Field(
         description="id вселенной.",
         examples=[1],
     )
     tags: list[str] = Field(
-        description="Slug'и тегов: ровно один `base` + 0..N `modifier`.",
+        description=(
+            "Slug'и тегов `location` и `time_of_day`: ровно один `base` + 0..N "
+            "`modifier`."
+        ),
         examples=[["library", "night"]],
     )

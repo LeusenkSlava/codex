@@ -30,12 +30,11 @@ class LocalMediaStorage:
         return await self.save_bytes(upload.filename or "", folder, await upload.read())
 
     async def save_bytes(self, filename: str, folder: str, content: bytes) -> str:
-        """Сохраняет байты файла под уникальным именем.
+        """Сохраняет байты под уникальным именем.
 
-        Используется при импорте изображений из архива, где файл уже
-        лежит в памяти, а не в UploadFile.
+        Для файлов, которые уже в памяти, а не в `UploadFile` (импорт архива).
 
-        :param filename: исходное имя файла (нужно расширение).
+        :param filename: исходное имя файла — из него берётся расширение.
         :param folder: подпапка внутри корня медиа.
         :param content: байты файла.
         :return: публичный url файла.
@@ -54,11 +53,12 @@ class LocalMediaStorage:
         return f"{self._base_url}/{folder}/{name}"
 
     def get_path(self, folder: str, filename: str) -> Path | None:
-        """Возвращает путь к файлу в хранилище.
+        """Путь к файлу в хранилище.
 
         :param folder: подпапка внутри корня медиа.
         :param filename: имя файла.
-        :return: путь к файлу или None, если файла нет или путь ведёт за пределы хранилища.
+        :return: путь к файлу или None, если файла нет или путь ведёт за
+            пределы хранилища.
         """
         root = self._root.resolve()
         path = (root / folder / filename).resolve()
@@ -67,9 +67,9 @@ class LocalMediaStorage:
         return path
 
     def delete(self, url: str | None) -> None:
-        """Удаляет файл по его url, если он лежит в этом хранилище.
+        """Удаляет файл по url, если он принадлежит этому хранилищу.
 
-        :param url: url файла.
+        :param url: url файла; None и чужие url игнорируются.
         """
         if not url or not url.startswith(f"{self._base_url}/"):
             return
@@ -77,9 +77,9 @@ class LocalMediaStorage:
         path.unlink(missing_ok=True)
 
     def delete_unreferenced(self, referenced: set[str]) -> None:
-        """Удаляет файлы, на которые больше нет ссылок.
+        """Удаляет все файлы хранилища, которых нет в `referenced`.
 
-        :param referenced: url всех файлов, которые ещё используются.
+        :param referenced: url файлов, на которые ещё есть ссылки.
         """
         for path in self._root.rglob("*"):
             url = f"{self._base_url}/{path.relative_to(self._root).as_posix()}"

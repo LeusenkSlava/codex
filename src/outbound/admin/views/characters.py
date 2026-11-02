@@ -35,7 +35,7 @@ class CharacterAdmin(MediaCleanupMixin, ModelView, model=CharacterModel):
     ]
     column_formatters = {"tags": _tags_formatter}
     column_formatters_detail = {"tags": _tags_formatter}
-    # tags - M2M, sqladmin отрисует как multi-select по уже созданным TagModel
+    # tags — M2M: sqladmin отрисует мультиселект по уже созданным тегам.
     form_columns = [
         CharacterModel.universe,
         CharacterModel.slug,

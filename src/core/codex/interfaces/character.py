@@ -8,10 +8,10 @@ class CharacterRepositoryProtocol(Protocol):
     """Репозиторий персонажей."""
 
     async def get_by_universe(self, universe_id: int) -> list[Character]:
-        """Возвращает всех персонажей вселенной.
+        """Персонажи вселенной.
 
         :param universe_id: id вселенной.
-        :return: список персонажей с тегами.
+        :return: персонажи с тегами, по возрастанию id.
         """
         ...
 
@@ -20,23 +20,23 @@ class SpriteRepositoryProtocol(Protocol):
     """Репозиторий спрайтов."""
 
     async def get_by_character(self, character_id: int) -> list[Sprite]:
-        """Возвращает все спрайты персонажа.
+        """Спрайты персонажа.
 
         :param character_id: id персонажа.
-        :return: список спрайтов с тегами.
+        :return: спрайты с тегами, по возрастанию id.
         """
         ...
 
     async def get_by_character_ids(self, character_ids: list[int]) -> list[Sprite]:
-        """Возвращает спрайты персонажей
+        """Спрайты нескольких персонажей одной выборкой.
 
         :param character_ids: id персонажей.
-        :return: словарь где клюс id персонажа.
+        :return: спрайты с тегами, сгруппированные по `character_id`.
         """
         ...
 
     async def get_by_id(self, sprite_id: int) -> Sprite | None:
-        """Возвращает спрайт по id.
+        """Спрайт по id.
 
         :param sprite_id: id спрайта.
         :return: спрайт с тегами или None.
@@ -48,30 +48,30 @@ class OutfitRepositoryProtocol(Protocol):
     """Репозиторий одежды."""
 
     async def get_by_sprite(self, sprite_id: int) -> list[Outfit]:
-        """Возвращает всю одежду спрайта.
+        """Одежда спрайта.
 
         :param sprite_id: id спрайта.
-        :return: список одежды с тегами.
+        :return: одежда с тегами, по возрастанию id.
         """
         ...
 
     async def get_by_character_ids(self, character_ids: list[int]) -> list[Outfit]:
-        """Возвращает одежду нескольких персонажей одной выборкой.
+        """Одежда нескольких персонажей одной выборкой.
 
         :param character_ids: id персонажей.
-        :return: список одежды с тегами.
+        :return: одежда с тегами, сгруппированная по персонажу.
         """
         ...
 
     async def get_by_sprite_and_tag(
         self, sprite_id: int, tag_slug: str
     ) -> Outfit | None:
-        """Возвращает одну одежду спрайта с указанным тегом.
+        """Одна одежда спрайта с указанным тегом `outfit_style`.
 
-        Если подходит несколько, возвращается одежда с наибольшим id.
+        При нескольких совпадениях берётся одежда с большим `id`.
 
         :param sprite_id: id спрайта.
-        :param tag_slug: slug тега одежды.
+        :param tag_slug: slug тега `outfit_style`.
         :return: одежда с тегами или None.
         """
         ...
@@ -83,23 +83,22 @@ class OutfitRepositoryProtocol(Protocol):
         *,
         include_tags: bool = True,
     ) -> list[Outfit]:
-        """Возвращает всю одежду персонажа с указанным тегом.
-
-        Сортировка — по убыванию id одежды.
+        """Вся одежда персонажа с указанным тегом `outfit_style`.
 
         :param character_id: id персонажа.
-        :param tag_slug: slug тега одежды.
+        :param tag_slug: slug тега `outfit_style`.
         :param include_tags: загружать ли теги одежды. Подбору визуала теги не
-            нужны — ``False`` позволяет не делать лишний запрос.
-        :return: список одежды с тегами (или без них при ``include_tags=False``).
+            нужны — ``False`` экономит запрос.
+        :return: одежда по убыванию id (с тегами или с пустым ``tags`` при
+            ``include_tags=False``).
         """
         ...
 
     async def get_tags_by_character(self, character_id: int) -> list[Tag]:
-        """Возвращает уникальные outfit-теги всей одежды персонажа.
+        """Теги `outfit_style` всей одежды персонажа.
 
         :param character_id: id персонажа.
-        :return: список тегов типа outfit_style без повторений.
+        :return: теги без повторов, по slug.
         """
         ...
 
@@ -108,33 +107,33 @@ class EmotionRepositoryProtocol(Protocol):
     """Репозиторий эмоций."""
 
     async def get_by_character(self, character_id: int) -> list[Emotion]:
-        """Возвращает все эмоции персонажа по всем его спрайтам.
+        """Все эмоции персонажа по всем его спрайтам.
 
         :param character_id: id персонажа.
-        :return: список эмоций с тегами.
+        :return: эмоции с тегами и `character_id`, по возрастанию id.
         """
         ...
 
     async def get_by_character_ids(self, character_ids: list[int]) -> list[Emotion]:
-        """Возвращает все эмоции персонажа по всем его спрайтам.
+        """Эмоции нескольких персонажей одной выборкой.
 
-        :param character_ids: список id персонажей.
-        :return: список эмоций с тегами.
+        :param character_ids: id персонажей.
+        :return: эмоции с тегами и `character_id`, по возрастанию id.
         """
         ...
 
     async def get_by_sprite(self, sprite_id: int) -> list[Emotion]:
-        """Возвращает все эмоции спрайта.
+        """Эмоции спрайта.
 
         :param sprite_id: id спрайта.
-        :return: список эмоций с тегами.
+        :return: эмоции с тегами, по возрастанию id.
         """
         ...
 
     async def get_tags_by_character(self, character_id: int) -> list[Tag]:
-        """Возвращает уникальные emotion-теги всех эмоций персонажа.
+        """Теги `emotion` всех эмоций персонажа.
 
         :param character_id: id персонажа.
-        :return: список тегов типа emotion (с kind).
+        :return: теги без повторов (с `kind`), по slug.
         """
         ...

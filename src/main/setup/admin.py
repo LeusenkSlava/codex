@@ -10,12 +10,13 @@ from src.outbound.admin.views import ADMIN_TEMPLATES_DIR, ADMIN_VIEWS
 
 
 class CodexAdmin(Admin):
-    """Admin без подстановки текущего файла при редактировании."""
+    """Admin, который не подставляет текущий файл в поле загрузки."""
 
     @staticmethod
     async def _handle_form_data(request: Request, obj: Any = None) -> FormData:
-        # sqladmin пытается восстановить файл из obj.<поле>.name (fastapi-storages),
-        # а у нас файлы лежат как url-строки — пустая загрузка просто не меняет asset_key.
+        # sqladmin пытается восстановить файл из obj.<поле>.name
+        # (fastapi-storages), а у нас файлы — это URL-строки: пустая загрузка
+        # не должна подменять asset_key.
         return await Admin._handle_form_data(request, None)
 
 

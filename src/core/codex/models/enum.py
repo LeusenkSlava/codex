@@ -9,22 +9,24 @@ class Gender(StrEnum):
 
 
 class TagType(StrEnum):
-    """Тип тега"""
+    """Тип тега — определяет, к каким сущностям он привязан."""
 
-    EMOTION = "emotion"  # sprite: neutral, happy, sad, angry, ...
-    OUTFIT_STYLE = "outfit_style"  # sprite: casual, formal, swimsuit, ... (доп. к текстовому outfit)
-    LOCATION = "location"  # background: площадь, столовая, пляж, ...
-    TIME_OF_DAY = "time_of_day"  # background: morning, day, evening, night
-    ARCHETYPE = "archetype"  # character: tsundere, kuudere, genki, ...
-    MUSIC = "music"  # sound: фоновая музыка (calm, battle, sad, ...)
-    SFX = "sfx"  # sound: звуковые эффекты (дождь, выстрел, шаги, ...)
+    EMOTION = "emotion"  # спрайт: facial-слой
+    OUTFIT_STYLE = "outfit_style"  # одежда: стиль одежды
+    LOCATION = "location"  # задник: сама локация
+    TIME_OF_DAY = "time_of_day"  # задник: время суток
+    ARCHETYPE = "archetype"  # персонаж: tsundere, kuudere, genki, ...
+    MUSIC = "music"  # звук: музыка
+    SFX = "sfx"  # звук: эффекты
 
 
 class TagKind(StrEnum):
-    """Роль тега внутри типа emotion.
+    """Роль тега внутри его типа.
 
-    Каждой эмоции-спрайту вешается ровно один base и 0..N modifier.
+    Значим для `emotion`, `outfit_style`, `location` и `time_of_day`: у тега
+    такой сущности может быть один `base` и 0..N `modifier` — по ним идёт
+    подбор. У остальных типов `kind` не заполняется.
     """
 
-    BASE = "base"  # обязательная, одна на реплику
-    MODIFIER = "modifier"  # необязательные уточнения
+    BASE = "base"
+    MODIFIER = "modifier"

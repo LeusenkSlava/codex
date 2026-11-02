@@ -10,18 +10,19 @@ class UniverseRepositoryProtocol(Protocol):
     async def search(
         self, query: str | None = None, offset: int = 0, limit: int = 20
     ) -> tuple[list[Universe], int]:
-        """Возвращает страницу вселенных и их общее число.
+        """Страница вселенных и общее число вселенных по фильтру.
 
-        :param query: необязательная подстрока для поиска по названию (title).
+        :param query: подстрока для поиска по `title` без учёта регистра.
         :param offset: сколько вселенных пропустить.
-        :param limit: максимальное число вселенных в странице.
-        :return: кортеж ``(вселенные, всего найдено)``.
+        :param limit: размер страницы.
+        :return: `(вселенные, всего найдено)`.
         """
         ...
 
     async def get(self, universe_id: int) -> Universe:
-        """Возвращает вселенной по id.
+        """Вселенная по id.
 
+        :param universe_id: id вселенной.
         :return: вселенная.
         """
         ...
@@ -31,34 +32,34 @@ class BackgroundRepositoryProtocol(Protocol):
     """Репозиторий задников."""
 
     async def get_by_universe(self, universe_id: int) -> list[Background]:
-        """Возвращает все задники вселенной.
+        """Задники вселенной.
 
         :param universe_id: id вселенной.
-        :return: список задников с тегами.
+        :return: задники с тегами и звуком, по возрастанию id.
         """
         ...
 
     async def get_by_universe_ids(self, universe_ids: list[int]) -> list[Background]:
-        """Возвращает задники нескольких вселенных одной выборкой.
+        """Задники нескольких вселенных одной выборкой.
 
         :param universe_ids: id вселенных.
-        :return: список задников с тегами.
+        :return: задники с тегами и звуком, сгруппированные по `universe_id`.
         """
         ...
 
     async def get_by_id(self, background_id: int) -> Background | None:
-        """Возвращает задник по id.
+        """Задник по id.
 
         :param background_id: id задника.
-        :return: задник с тегами или None.
+        :return: задник с тегами и звуком или None.
         """
         ...
 
     async def get_tags_by_universe(self, universe_id: int) -> list[Tag]:
-        """Возвращает уникальные location- и time_of_day-теги задников вселенной.
+        """Теги задников вселенной (только `location` и `time_of_day`).
 
         :param universe_id: id вселенной.
-        :return: список тегов типов location и time_of_day без повторений.
+        :return: теги без повторов, по slug.
         """
         ...
 
@@ -67,15 +68,15 @@ class SoundRepositoryProtocol(Protocol):
     """Репозиторий звуков."""
 
     async def get_by_universe(self, universe_id: int) -> list[Sound]:
-        """Возвращает все звуки вселенной.
+        """Звуки вселенной.
 
         :param universe_id: id вселенной.
-        :return: список звуков с тегами.
+        :return: звуки с тегами, по возрастанию id.
         """
         ...
 
     async def get_by_id(self, sound_id: int) -> Sound | None:
-        """Возвращает звук по id.
+        """Звук по id.
 
         :param sound_id: id звука.
         :return: звук с тегами или None.

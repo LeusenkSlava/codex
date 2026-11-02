@@ -23,8 +23,8 @@ from src.outbound.media import media_storage
 
 
 def _image_preview(model: Any, attr: Any) -> Markup:
-    # sqladmin передаёт в форматтер имя свойства, поэтому картинкой может быть
-    # любое поле (asset_key у ассетов, cover_asset_key у вселенной).
+    # sqladmin передаёт в форматтер имя свойства: картинкой может быть любое
+    # поле-URL, поэтому сначала пробуем attr, затем asset_key.
     url = getattr(model, attr, None) if isinstance(attr, str) else None
     if not url:
         url = getattr(model, "asset_key", None)
@@ -64,10 +64,11 @@ def _tags_formatter(model: Any, _attr: Any) -> list[Markup]:
 
 
 class AssetUploadMixin:
-    """Загрузка медиафайла вместо ручного ввода asset_key.
+    """Загрузка файла вместо ручного ввода URL ассета.
 
-    Файл сохраняется в папку медиа, в asset_attribute пишется его url.
-    По умолчанию это ``asset_key``; у вселенной — ``cover_asset_key``.
+    Файл сохраняется в папку `asset_folder`, а его URL записывается в поле
+    `asset_attribute` (по умолчанию `asset_key`; у вселенной —
+    `cover_asset_key`). При замене и удалении записи старый файл удаляется.
     """
 
     asset_folder: ClassVar[str]
@@ -75,7 +76,7 @@ class AssetUploadMixin:
     asset_required: ClassVar[bool] = True
     asset_label: ClassVar[str] = "Изображение"
     asset_field: ClassVar[str] = "file"
-    # необязательное ограничение по расширениям (например, только картинки)
+    # необязательный фильтр расширений (например, только картинки)
     asset_extensions: ClassVar[frozenset[str] | None] = None
 
     column_formatters: ClassVar[dict] = {
@@ -125,14 +126,14 @@ class AssetUploadMixin:
             raise ValueError(f"Загрузите {self.asset_label.lower()}")
 
     async def after_model_delete(self, model: Any, request: Request) -> None:
-        # файл удаляем до вызова super(): следующий миксин чистит медиа по
-        # ссылкам из БД, и удалённый файл должен быть уже недоступен
+        # Файл удаляется до super(): следующий миксин собирает ссылки из БД,
+        # а этого файла там уже быть не должно — иначе он останется сиротой.
         media_storage.delete(getattr(model, self.asset_attribute, None))
         await super().after_model_delete(model, request)  # type: ignore[misc]
 
 
 class TagTypeFilterMixin:
-    """Показывает в выборе тегов только теги указанных типов."""
+    """Оставляет в поле `tags` формы только теги типов `tag_types`."""
 
     tag_types: ClassVar[tuple[TagType, ...]]
 
@@ -144,7 +145,8 @@ class TagTypeFilterMixin:
         )
         async with self.session_maker() as session:  # type: ignore[attr-defined]
             tags = (await session.scalars(stmt)).all()
-        # опции считаются при каждом построении формы, чтобы подхватывать новые теги
+        # Опции пересобираются при каждом построении формы, чтобы новые теги
+        # сразу появлялись в выборе.
         self.form_args = {
             **self.form_args,  # type: ignore[has-type]
             "tags": {"data": [(str(tag.id), tag.name) for tag in tags]},
@@ -153,10 +155,11 @@ class TagTypeFilterMixin:
 
 
 class MediaCleanupMixin:
-    """Чистит файлы записей, удалённых каскадом вместе с этой.
+    """Удаляет файлы ассетов, удалённых каскадом вместе с этой записью.
 
-    Например, при удалении спрайта БД удаляет его одежду и эмоции,
-    а их картинки остаются на диске — убираем всё, на что нет ссылок.
+    Например, при удалении спрайта БД удаляет его одежду и эмоции, а их
+    картинки остались бы на диске. После удаления в медиа остаются только
+    файлы, на которые ещё есть ссылки, включая обложки вселенных.
     """
 
     async def after_model_delete(self, model: Any, request: Request) -> None:
@@ -170,8 +173,8 @@ class MediaCleanupMixin:
                 SoundModel,
             ):
                 referenced.update(await session.scalars(select(asset_model.asset_key)))
-            # обложки вселенных тоже лежат в медиа: без них cleanup удалил бы их
-            # при любом удалении через админку
+            # Обложки лежат в медиа как и ассеты: без них cleanup снёс бы их
+            # при любом удалении через админку.
             covers = await session.scalars(select(UniverseModel.cover_asset_key))
             referenced.update(cover for cover in covers if cover)
         media_storage.delete_unreferenced(referenced)

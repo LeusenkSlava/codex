@@ -7,6 +7,8 @@ Base = declarative_base()
 
 
 class BaseModel(Base):
+    """Общие колонки всех таблиц: `id` и метки времени в UTC."""
+
     __abstract__ = True
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)

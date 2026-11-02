@@ -9,9 +9,9 @@ class CharacterService:
         self._repository = repository
 
     async def get_by_universe(self, universe_id: int) -> list[Character]:
-        """Возвращает всех персонажей вселенной.
+        """Все персонажи вселенной.
 
         :param universe_id: id вселенной.
-        :return: список персонажей с тегами.
+        :return: персонажи с тегами, по возрастанию id.
         """
         return await self._repository.get_by_universe(universe_id)

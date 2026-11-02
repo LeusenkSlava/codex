@@ -15,7 +15,7 @@ from src.outbound.database.utils import pg_enum
 
 
 class TagModel(BaseModel):
-    """Пространство тегов"""
+    """Тег: `type` задаёт сущность, `kind` — роль в подборе (`base`/`modifier`)."""
 
     __tablename__ = "tags"
     __table_args__ = (
@@ -26,7 +26,7 @@ class TagModel(BaseModel):
     type: Mapped[TagType] = mapped_column(pg_enum(TagType), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    # роль тега: значимо только для type=emotion (base / modifier)
+    # роль тега; заполняется только для типов, по которым идёт подбор
     kind: Mapped[TagKind | None] = mapped_column(pg_enum(TagKind), nullable=True)
 
     def __str__(self) -> str:
@@ -34,7 +34,7 @@ class TagModel(BaseModel):
 
 
 def _tag_link_table(name: str, owner_table: str) -> Table:
-    """Фабрика M2M-таблиц owner<->tag, чтобы не дублировать определение."""
+    """M2M-таблица `owner <-> tags` для одной сущности."""
     return Table(
         name,
         Base.metadata,

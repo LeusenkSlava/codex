@@ -26,7 +26,12 @@ from src.inbound.http.codex.schemas import (
 router = APIRouter(tags=["universes"])
 
 
-@router.get("/universes", response_model=UniverseListResponse)
+@router.get(
+    "/universes",
+    response_model=UniverseListResponse,
+    summary="Список вселенных",
+    description="Страница вселенных с обложками; поддерживает поиск по названию.",
+)
 async def universes_list(
     service: Annotated[UniverseService, Depends(get_universe_service)],
     search: Annotated[
@@ -47,8 +52,13 @@ async def universes_list(
     return UniverseListResponse(items=items, total=total, offset=offset, limit=limit)
 
 
-# TODO Возвращает None вместо 404
-@router.get("/universes/{universe_id}", response_model=UniverseSchema)
+# FIXME: для несуществующей вселенной возвращается 500 (None не проходит
+# валидацию ответа), а не 404.
+@router.get(
+    "/universes/{universe_id}",
+    response_model=UniverseSchema,
+    summary="Вселенная по id",
+)
 async def get_universe(
     universe_id: int,
     service: Annotated[UniverseService, Depends(get_universe_service)],
@@ -57,7 +67,10 @@ async def get_universe(
 
 
 @router.get(
-    "/universes/{universe_id}/characters", response_model=list[CharacterSchema]
+    "/universes/{universe_id}/characters",
+    response_model=list[CharacterSchema],
+    summary="Персонажи вселенной",
+    description="Персонажи вселенной с тегами. Если их нет — пустой список.",
 )
 async def get_characters(
     universe_id: int,
@@ -67,7 +80,10 @@ async def get_characters(
 
 
 @router.get(
-    "/universes/{universe_id}/backgrounds", response_model=list[BackgroundSchema]
+    "/universes/{universe_id}/backgrounds",
+    response_model=list[BackgroundSchema],
+    summary="Задники вселенной",
+    description="Задники вселенной с тегами и звуком (`sound_asset_key`).",
 )
 async def get_backgrounds(
     universe_id: int,
@@ -81,8 +97,8 @@ async def get_backgrounds(
     response_model=BackgroundTagsResponse,
     summary="Теги задников вселенной",
     description=(
-        "Теги задников вселенной по роли: `base` — локации, `modifiers` — "
-        "уточнения. Внутри групп — сортировка по slug."
+        "Теги задников вселенной по роли: `base` — локации, "
+        "`modifiers` — уточнения. Внутри групп — сортировка по slug."
     ),
 )
 async def get_background_tags(
@@ -95,13 +111,13 @@ async def get_background_tags(
 @router.post(
     "/universes/{universe_id}/backgrounds/match",
     response_model=BackgroundSchema,
-    summary="Подобрать задник вселенной по тегам",
+    summary="Подобрать задник вселенной",
     description=(
-        "Ровно один тег должен быть `base` (локация). Приоритет: больше "
-        "совпавших `modifier`, затем меньше лишних `modifier`, затем меньший "
-        "`id`. Если ничего не подошло — `404`."
+        "Подбирает задник по тегам. Побеждает задник с большим числом совпавших "
+        "`modifier`, при равенстве — с меньшим числом лишних `modifier`, затем — "
+        "с меньшим `id`."
     ),
-    responses={404: {"description": "Подходящий задник не найден"}},
+    responses={404: {"description": "Подходящий задник не найден."}},
 )
 async def match_background(
     universe_id: int,
@@ -117,10 +133,10 @@ async def match_background(
 @router.post(
     "/universes/backgrounds/batch",
     response_model=dict[int, BackgroundSchema | None],
-    summary="Подобрать задники для нескольких вселенных (батч)",
+    summary="Подобрать задники вселенных",
     description=(
-        "То же, что одиночный `match`, для списка вселенных. Ответ — "
-        "`universe_id -> задник` (`null`, если ничего не подошло)."
+        "Батч-версия `POST /universes/{universe_id}/backgrounds/match` с теми же "
+        "правилами. Ключ — `universe_id`, значение — `null`, если задник не найден."
     ),
 )
 async def match_backgrounds_batch(

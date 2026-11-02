@@ -6,7 +6,7 @@ from src.core.codex.models.tag import Tag
 
 @dataclass(frozen=True, slots=True)
 class Character:
-    """Персонаж."""
+    """Персонаж вселенной."""
 
     id: int
     universe_id: int
@@ -20,7 +20,7 @@ class Character:
 
 @dataclass(frozen=True, slots=True)
 class Sprite:
-    """Спрайт персонажа (базовый слой: тело/поза)."""
+    """Спрайт — базовый слой персонажа: тело и поза."""
 
     id: int
     character_id: int
@@ -32,7 +32,7 @@ class Sprite:
 
 @dataclass(frozen=True, slots=True)
 class Outfit:
-    """Одежда персонажа (слой поверх спрайта)."""
+    """Одежда — слой поверх спрайта."""
 
     id: int
     sprite_id: int
@@ -44,7 +44,7 @@ class Outfit:
 
 @dataclass(frozen=True, slots=True)
 class Emotion:
-    """Эмоция персонажа (слой лица поверх спрайта)."""
+    """Эмоция — слой лица поверх спрайта."""
 
     id: int
     sprite_id: int

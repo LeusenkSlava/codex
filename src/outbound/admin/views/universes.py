@@ -21,11 +21,12 @@ from src.outbound.media.storage import IMAGE_EXTENSIONS
 class UniverseAdmin(
     AssetUploadMixin, MediaCleanupMixin, ModelView, model=UniverseModel
 ):
+    """Вселенные; обложка необязательна."""
+
     asset_folder = "universes"
     asset_attribute = "cover_asset_key"
     asset_label = "Обложка"
     asset_extensions = IMAGE_EXTENSIONS
-    # обложка необязательна: вселенные можно создавать и без картинки
     asset_required = False
     column_list = [
         UniverseModel.id,

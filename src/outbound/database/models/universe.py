@@ -6,7 +6,7 @@ from src.outbound.database.models.tag import TagModel, background_tags, sound_ta
 
 
 class BackgroundModel(BaseModel):
-    """Локация"""
+    """Задник — локация вселенной."""
 
     __tablename__ = "backgrounds"
     __table_args__ = (UniqueConstraint("universe_id", "slug"),)
@@ -17,6 +17,7 @@ class BackgroundModel(BaseModel):
     slug: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     asset_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    # звук задника; при удалении звука обнуляется (SET NULL).
     sound_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("sounds.id", ondelete="SET NULL"), nullable=True
     )
@@ -30,7 +31,7 @@ class BackgroundModel(BaseModel):
 
 
 class SoundModel(BaseModel):
-    """Звук: музыка или звуковой эффект."""
+    """Звук — музыка или звуковой эффект."""
 
     __tablename__ = "sounds"
     __table_args__ = (UniqueConstraint("universe_id", "slug"),)
@@ -50,12 +51,14 @@ class SoundModel(BaseModel):
 
 
 class UniverseModel(BaseModel):
+    """Вселенная (сеттинг новеллы)."""
+
     __tablename__ = "universes"
 
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    # обложка вселенной: url файла в медиа-хранилище (например, /media/universes/<uuid>.png)
+    # url обложки в медиа-хранилище, например /media/universes/<uuid>.png
     cover_asset_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     def __str__(self) -> str:

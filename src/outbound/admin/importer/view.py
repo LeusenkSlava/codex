@@ -9,7 +9,7 @@ from src.outbound.database.session import async_session_factory
 
 
 class ImporterView(BaseView):
-    """Загрузка ZIP-архива с персонажами (дополнительный способ наполнения)."""
+    """Страница «Импорт»: загрузка ZIP-архива с персонажами."""
 
     name = "Импорт"
     icon = "fa-solid fa-file-import"

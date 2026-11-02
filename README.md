@@ -19,11 +19,11 @@ Codex хранит «библиотеку» всего, из чего собир
 | **Emotion** | Слой лица (эмоция) поверх спрайта | спрайту |
 | **Background** | Задник / локация | вселенной |
 | **Sound** | Звук: музыка или звуковой эффект (аудиофайл) | вселенной |
-| **Tag** | Теги для подбора: `emotion`, `outfit_style`, `location`, `time_of_day`, `archetype`, `music`, `sfx`; у `emotion`-тегов есть `kind`: `base` (ровно один на эмоцию) и `modifier` (0..N); у `outfit_style`-тегов — `base` (ровно один на одежду) | — |
+| **Tag** | Теги для подбора: `type` — сущность (`emotion`, `outfit_style`, `location`, `time_of_day`, `archetype`, `music`, `sfx`), `kind` — роль в подборе (`base` или `modifier`) | — |
 
 Возможности:
 
-- **REST API (только чтение)** — списки вселенных, персонажей, спрайтов, эмоций, одежды и задников.
+- **REST API (только чтение)** — списки вселенных, персонажей, спрайтов, эмоций, одежды и задников, а также подбор по тегам.
 - **Админка** на `/admin` (sqladmin) — создание и редактирование всех сущностей, загрузка изображений, обложек вселенных и аудио.
 - **Массовый импорт персонажей** — страница «Импорт» в админке: загрузка ZIP-архива с `manifest.json` и картинками, создающего персонажей со спрайтами, одеждой и эмоциями одной операцией.
 - **Раздача медиа** — загруженные изображения, обложки вселенных и аудио сохраняются в папку `media/` и отдаются по `/media/<folder>/<file>`.
@@ -35,27 +35,28 @@ Codex хранит «библиотеку» всего, из чего собир
 
 | Метод | Путь | Описание |
 |---|---|---|
-| GET | `/universes` | Вселенные с обложкой (`cover_asset_key`), пагинацией и поиском по названию (`?search=&offset=0&limit=20` → `{items, total, offset, limit}`) |
-| GET | `/universes/{universe_id}` | Вселенная по id, включая обложку (`cover_asset_key`) |
+| GET | `/universes` | Вселенные с обложкой, пагинация и поиск по названию (`?search=&offset=0&limit=20` → `{items, total, offset, limit}`) |
+| GET | `/universes/{universe_id}` | Вселенная по id |
 | GET | `/universes/{universe_id}/characters` | Персонажи вселенной |
 | GET | `/universes/{universe_id}/backgrounds` | Задники вселенной |
-| GET | `/universes/{universe_id}/backgrounds/tags` | Теги задников вселенной: локации (`base`) и модификаторы (`modifiers`) отдельными списками |
-| POST | `/universes/{universe_id}/backgrounds/match` | Подбор одного самого подходящего задника по тегам (`{"tags": ["library", "night"]}`: ровно один `base` + 0..N `modifier`) |
-| POST | `/universes/backgrounds/batch` | Батч подбора задников (`[{"universe_id": 1, "tags": [...]}, ...]` → `dict[universe_id, background]`) |
+| GET | `/universes/{universe_id}/backgrounds/tags` | Теги задников по роли: `base` (локации) и `modifiers` |
+| POST | `/universes/{universe_id}/backgrounds/match` | Подбор задника по тегам (`{"tags": ["library", "night"]}`) |
+| POST | `/universes/backgrounds/batch` | Батч подбора задников (`[{"universe_id": 1, "tags": [...]}, ...]`) |
 | GET | `/characters/{character_id}/sprites` | Спрайты персонажа |
+| POST | `/characters/sprites/batch` | Батч: `[id, ...]` → `dict[character_id, [спрайты]]` |
 | GET | `/characters/{character_id}/emotions` | Эмоции персонажа по всем его спрайтам |
-| GET | `/characters/{character_id}/emotions/tags` | Теги эмоций персонажа: `base` и `modifiers` отдельными списками |
-| POST | `/characters/{character_id}/emotions/match` | Подбор одной самой подходящей эмоции по тегам (`{"sprite_id": 1, "tags": ["happy", "blush"]}` — `sprite_id` необязателен) |
-| POST | `/characters/emotions/batch` | Батч подбора эмоций (`[{"character_id": 1, "sprite_id": 1, "tags": [...]}, ...]` → `dict[character_id, emotion]`) |
+| GET | `/characters/{character_id}/emotions/tags` | Теги эмоций по роли: `base` и `modifiers` |
+| POST | `/characters/{character_id}/emotions/match` | Подбор эмоции по тегам (необязательный `sprite_id` даёт приоритет его эмоциям) |
+| POST | `/characters/emotions/batch` | Батч подбора эмоций (`[{"character_id": 1, "sprite_id": 1, "tags": [...]}, ...]`) |
 | GET | `/sprites/{sprite_id}/outfits` | Одежда спрайта |
-| GET | `/characters/{character_id}/outfits/tags` | Теги одежды персонажа (type=outfit_style) без повторений |
-| POST | `/sprites/{sprite_id}/outfits/match` | Подбор одной одежды по тегу (`{"tag": "casual"}`; при нескольких — с наибольшим `id`) |
-| POST | `/characters/outfits-with-emotions/batch` | Батч: `[id, ...]` → `dict[character_id, [теги стиля одежды (outfit_style, kind=base) + доступные для них эмоции]]` |
-| POST | `/characters/{character_id}/visuals/match` | Подбор спрайта + наряда + эмоции (`{"outfit_tag": "red-dress", "emotion_tags": ["angry", "soft"]}` → `{sprite_asset_key, outfit_asset_key, emotion_asset_key}`; спрайт/наряд/эмоция берутся с одного тела; эмоция не найдена → `emotion_asset_key: null`, наряд не найден → `404`) |
-| GET | `/media/{folder}/{filename}` | Файл медиа: изображение или аудио (значение `asset_key`) |
+| GET | `/characters/{character_id}/outfits/tags` | Теги `outfit_style` одежды персонажа |
+| POST | `/sprites/{sprite_id}/outfits/match` | Подбор одежды по тегу (`{"tag": "casual"}`) |
+| POST | `/characters/outfits-with-emotions/batch` | Батч: `[id, ...]` → теги стиля одежды персонажа и доступные для них эмоции |
+| POST | `/characters/{character_id}/visuals/match` | Подбор спрайта + наряда + эмоции с одного тела (`{"outfit_tag": "red-dress", "emotion_tags": ["angry", "soft"]}`) |
+| GET | `/media/{folder}/{filename}` | Медиафайл (значение `asset_key`) |
 | GET | `/health` | Проверка состояния сервиса |
 
-Полная схема — в Swagger: `/docs`.
+Правила подбора описаны в разделах ниже; полная схема — в Swagger: `/docs`.
 
 ### Обложки вселенных
 
@@ -137,17 +138,6 @@ alice.zip
 `swimsuit`, `sports_suit`, `glasses`, `stethoscope`, `coat`, `panama` — подбор
 в `POST /sprites/{id}/outfits/match`.
 
-Если эмоции/одежда уже созданы в БД, но остались без тегов, их дотегирует идемпотентный
-скрипт (недостающие теги создаёт сам, заодно чинит slug'и с опечатками):
-
-```bash
-docker compose -p codex exec app python scripts/tag_assets.py
-docker compose -p codex exec app python scripts/tag_assets.py --only одежда
-```
-
-Правила «slug → теги» лежат в `scripts/tag_assets.py` и продублированы
-в `EMOTION_TAGS` / `OUTFIT_TAGS` в `scripts/build_normal_archive.py`.
-
 ### Теги задников
 
 Задник размечен тегами двух типов, а роль тега задаёт `kind` — как у эмоций:
@@ -156,28 +146,10 @@ docker compose -p codex exec app python scripts/tag_assets.py --only одежд�
 `inside`/`outside`, `light_turn_on`/`light_turn_off`, `with_people`/`without_people`,
 `bedroom`).
 
-- `GET /universes/{id}/backgrounds/tags` возвращает доступные вселенной теги,
-  сгруппированные по **роли**: `{"base": [...], "modifiers": [...]}`
-  (внутри — по slug, без повторов).
-- `POST /universes/{id}/backgrounds/match` принимает `{"tags": ["library", "night"]}`:
-  ровно один `base`-тег обязателен. Побеждает задник с большим числом совпавших
-  `modifier`, затем — с меньшим числом лишних `modifier`, при равенстве —
-  с меньшим `id`. Если подходящего задника нет — `404`.
-- `POST /universes/backgrounds/batch` делает то же для списка
-  `[{"universe_id": 1, "tags": [...]}, ...]` и возвращает
-  `{"1": background | null, ...}`.
-
-Примеры: `["library", "inside", "day"]` → `int_library_day`;
-`["library", "night"]` → `int_library_night2` (при равном счёте побеждает меньший `id`);
-`["library", "night", "light_turn_off"]` → `int_library_night`.
-
-Разметку задников и пробелы в slug'ах тегов чинит идемпотентный скрипт
-(по умолчанию только показывает план):
-
-```bash
-docker compose -p codex exec app python scripts/fix_background_tags.py --dry-run
-docker compose -p codex exec app python scripts/fix_background_tags.py
-```
+Приоритет подбора: больше совпавших `modifier`, затем меньше лишних `modifier`,
+при равенстве — меньший `id`. Примеры: `["library", "inside", "day"]` → `int_library_day`;
+`["library", "night"]` → `int_library_night2`; `["library", "night", "light_turn_off"]`
+→ `int_library_night`.
 
 ### Структура
 

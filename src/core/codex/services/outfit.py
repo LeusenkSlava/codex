@@ -10,28 +10,28 @@ class OutfitService:
         self._repository = repository
 
     async def get_by_sprite(self, sprite_id: int) -> list[Outfit]:
-        """Возвращает всю одежду спрайта.
+        """Вся одежда спрайта.
 
         :param sprite_id: id спрайта.
-        :return: список одежды с тегами.
+        :return: одежда с тегами, по возрастанию id.
         """
         return await self._repository.get_by_sprite(sprite_id)
 
     async def match(self, sprite_id: int, tag_slug: str) -> Outfit | None:
-        """Возвращает одну одежду спрайта по тегу.
+        """Одежда спрайта по тегу `outfit_style`.
 
-        Если под несколько вариантов, выбирается одежда с наибольшим id.
+        При нескольких совпадениях берётся одежда с большим `id`.
 
         :param sprite_id: id спрайта.
-        :param tag_slug: slug тега одежды.
-        :return: одежда с тегами или None.
+        :param tag_slug: slug тега `outfit_style`.
+        :return: одежда с тегами или None, если ничего не подошло.
         """
         return await self._repository.get_by_sprite_and_tag(sprite_id, tag_slug)
 
     async def get_tags_by_character(self, character_id: int) -> list[Tag]:
-        """Возвращает уникальные outfit-теги всей одежды персонажа.
+        """Теги `outfit_style` всей одежды персонажа.
 
         :param character_id: id персонажа.
-        :return: список тегов типа outfit_style без повторений.
+        :return: теги без повторов, по slug.
         """
         return await self._repository.get_tags_by_character(character_id)

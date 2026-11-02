@@ -22,6 +22,7 @@ from src.outbound.database.models import (
 from src.outbound.media import media_storage
 from src.outbound.media.storage import IMAGE_EXTENSIONS
 
+# Папка медиа для каждого вида картинки из манифеста.
 IMAGE_FOLDERS = {
     "sprite": "sprites",
     "outfit": "outfits",
@@ -31,7 +32,7 @@ IMAGE_FOLDERS = {
 
 @dataclass
 class ImportReport:
-    """Результат импорта."""
+    """Результат импорта: сколько создано и какие проблемы нашлись."""
 
     created_characters: int = 0
     created_sprites: int = 0
@@ -45,12 +46,21 @@ class ImportReport:
 
 
 class ImportService:
-    """Импорт персонажей из архива с манифестом."""
+    """Импорт персонажей из ZIP-архива с `manifest.json`.
+
+    Импорт атомарный: сначала весь архив проверяется, и если есть хоть одна
+    ошибка, ничего не создаётся.
+    """
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
     async def import_zip(self, upload: UploadFile) -> ImportReport:
+        """Проверяет архив и создаёт из него персонажей.
+
+        :param upload: ZIP-архив с `manifest.json` и картинками.
+        :return: отчёт с числом созданных записей или со списком ошибок.
+        """
         raw = await upload.read()
         try:
             archive = zipfile.ZipFile(io.BytesIO(raw))
@@ -70,8 +80,9 @@ class ImportService:
                 return await self._import(archive, manifest, session)
 
     def _parse_manifest(self, archive: zipfile.ZipFile) -> Manifest | None:
-        """Читает и валидирует manifest.json из архива.
+        """Читает и валидирует `manifest.json` из архива.
 
+        :param archive: открытый ZIP-архив.
         :return: манифест или None, если файла нет или он невалиден.
         """
         try:
@@ -89,6 +100,16 @@ class ImportService:
     async def _import(
         self, archive: zipfile.ZipFile, manifest: Manifest, session: AsyncSession
     ) -> ImportReport:
+        """Проверяет манифест по БД и архиву, затем создаёт записи.
+
+        Если найдена хоть одна ошибка, персонажи не создаются, а картинки,
+        успевшие сохраниться, удаляются.
+
+        :param archive: открытый ZIP-архив.
+        :param manifest: уже валидированный по схеме манифест.
+        :param session: сессия БД; коммит делается здесь же.
+        :return: отчёт с числом созданных записей или со списком ошибок.
+        """
         errors: list[str] = []
 
         if manifest.version != 1:
@@ -195,6 +216,7 @@ class ImportService:
 
     @staticmethod
     def _collect_tag_slugs(manifest: Manifest) -> set[str]:
+        """Собирает все slug'и тегов манифеста, чтобы резолвить их одним запросом."""
         slugs: set[str] = set()
         for character in manifest.characters:
             slugs.update(character.tags)
@@ -212,7 +234,11 @@ class ImportService:
         tags_by_slug: dict[str, list[TagModel]],
         errors: list[str],
     ) -> None:
-        """Проверяет, что все теги существуют и имеют правильный тип."""
+        """Проверяет, что теги существуют и подходят по контексту.
+
+        Персонаж принимает `archetype`, одежда — `outfit_style`, эмоция —
+        `emotion`; тегам спрайта тип не важен.
+        """
 
         def check(slug: str, expected: TagType | None, where: str) -> None:
             variants = tags_by_slug.get(slug, [])
@@ -260,7 +286,7 @@ class ImportService:
         session: AsyncSession,
         errors: list[str],
     ) -> None:
-        """Проверяет, что персонажи манифеста ещё не существуют во вселенной."""
+        """Проверяет, что персонажей с такими slug'ами ещё нет во вселенной."""
         slugs = [character.slug for character in manifest.characters]
         result = await session.scalars(
             select(CharacterModel.slug).where(
@@ -278,7 +304,7 @@ class ImportService:
 
     @staticmethod
     def _validate_conflicts(manifest: Manifest, errors: list[str]) -> None:
-        """Проверяет дубликаты slug внутри манифеста (и по персонажу)."""
+        """Ищет повторяющиеся slug'и внутри манифеста на каждом уровне."""
 
         seen_characters: set[str] = set()
         for character in manifest.characters:
@@ -315,7 +341,7 @@ class ImportService:
     def _validate_images(
         archive: zipfile.ZipFile, manifest: Manifest, errors: list[str]
     ) -> None:
-        """Проверяет наличие файлов картинок и их расширения."""
+        """Проверяет, что картинки есть в архиве и имеют допустимый формат."""
 
         names = set(archive.namelist())
         allowed = IMAGE_EXTENSIONS
@@ -357,10 +383,15 @@ class ImportService:
         expected: TagType | None,
         tags_by_slug: dict[str, list[TagModel]],
     ) -> list[TagModel]:
-        """Возвращает ORM-теги по slug; теги уже проверены на существование/тип."""
+        """ORM-теги по slug'ам; теги уже проверены на существование и тип.
+
+        Если у slug'а несколько тегов разных типов, берётся тег типа
+        `expected`, а при `expected=None` — первый найденный.
+        """
         result: list[TagModel] = []
         for slug in slugs:
             variants = tags_by_slug[slug]
+            # `expected` проверен в _validate_tags; здесь ошибка импорта не нужна.
             if expected is None:
                 result.append(variants[0])
             else:

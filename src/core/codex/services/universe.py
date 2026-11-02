@@ -11,18 +11,19 @@ class UniverseService:
     async def search(
         self, query: str | None = None, offset: int = 0, limit: int = 20
     ) -> tuple[list[Universe], int]:
-        """Возвращает страницу вселенных и их общее число.
+        """Страница вселенных и общее число вселенных по фильтру.
 
-        :param query: необязательная подстрока для поиска по названию (title).
+        :param query: подстрока для поиска по `title` без учёта регистра.
         :param offset: сколько вселенных пропустить.
-        :param limit: максимальное число вселенных в странице.
-        :return: кортеж ``(вселенные, всего найдено)``.
+        :param limit: размер страницы.
+        :return: `(вселенные, всего найдено)`.
         """
         return await self._repository.search(query=query, offset=offset, limit=limit)
 
     async def get(self, universe_id: int) -> Universe:
-        """Возвращает вселенной по id.
+        """Вселенная по id.
 
+        :param universe_id: id вселенной.
         :return: вселенная.
         """
         return await self._repository.get(universe_id)

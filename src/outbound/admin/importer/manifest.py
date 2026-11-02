@@ -8,7 +8,7 @@ class _Entry(BaseModel):
 
 
 class EmotionEntry(_Entry):
-    """Эмоция (слой лица) поверх спрайта."""
+    """Эмоция (слой лица поверх спрайта)."""
 
     slug: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -17,7 +17,7 @@ class EmotionEntry(_Entry):
 
 
 class OutfitEntry(_Entry):
-    """Одежда (слой) поверх спрайта."""
+    """Одежда (слой поверх спрайта)."""
 
     slug: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -26,7 +26,7 @@ class OutfitEntry(_Entry):
 
 
 class SpriteEntry(_Entry):
-    """Спрайт (базовый слой персонажа)."""
+    """Спрайт (базовый слой персонажа: тело и поза)."""
 
     slug: str = Field(min_length=1)
     description: str = ""
@@ -37,7 +37,7 @@ class SpriteEntry(_Entry):
 
 
 class CharacterEntry(_Entry):
-    """Персонаж со всеми его слоями."""
+    """Персонаж со спрайтами, одеждой и эмоциями."""
 
     slug: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -49,7 +49,7 @@ class CharacterEntry(_Entry):
 
 
 class Manifest(_Entry):
-    """Корень манифеста."""
+    """Корень `manifest.json`."""
 
     version: int = 1
     universe_slug: str = Field(min_length=1)

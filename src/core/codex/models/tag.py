@@ -5,7 +5,7 @@ from src.core.codex.models.enum import TagKind, TagType
 
 @dataclass(frozen=True, slots=True)
 class Tag:
-    """Тег."""
+    """Тег: `type` задаёт сущность, `kind` — роль в подборе (`base`/`modifier`)."""
 
     id: int
     type: TagType

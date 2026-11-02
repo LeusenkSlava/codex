@@ -14,7 +14,7 @@ from src.outbound.database.models import (
 from src.outbound.database.models.tag import background_tags
 from src.outbound.database.repositories.tag import TagRepository
 
-# Типы тегов, которыми размечен задник: локация (обязательная) + время суток.
+# Задники тегируются только тегами этих типов.
 _BACKGROUND_TAG_TYPES = (TagType.LOCATION, TagType.TIME_OF_DAY)
 
 
@@ -27,13 +27,12 @@ class UniverseRepository:
     async def search(
         self, query: str | None = None, offset: int = 0, limit: int = 20
     ) -> tuple[list[Universe], int]:
-        """Возвращает страницу вселенных и их общее число.
+        """Страница вселенных и общее число вселенных по фильтру.
 
-        :param query: необязательная подстрока для поиска по названию (title),
-            без учёта регистра.
+        :param query: подстрока для поиска по `title` без учёта регистра.
         :param offset: сколько вселенных пропустить.
-        :param limit: максимальное число вселенных в странице.
-        :return: кортеж ``(вселенные, всего найдено)``.
+        :param limit: размер страницы.
+        :return: `(вселенные, всего найдено)`.
         """
         stmt = select(UniverseModel)
         count_stmt = select(func.count()).select_from(UniverseModel)
@@ -105,10 +104,10 @@ class BackgroundRepository:
         return self._to_domain(model) if model else None
 
     async def get_tags_by_universe(self, universe_id: int) -> list[Tag]:
-        """Возвращает уникальные теги задников вселенной.
+        """Теги задников вселенной: только `location` и `time_of_day`.
 
         :param universe_id: id вселенной.
-        :return: теги типов location и time_of_day без повторений, по алфавиту slug.
+        :return: теги без повторов, по slug.
         """
         stmt = (
             select(TagModel)

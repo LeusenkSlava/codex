@@ -13,7 +13,7 @@ from src.core.codex.services.emotion import best_emotion
 
 @dataclass(frozen=True, slots=True)
 class OutfitEmotion:
-    """Эмоция, доступная для одежды (её emotion-тег)."""
+    """Тег эмоции, доступной для одежды."""
 
     slug: str
     name: str
@@ -22,7 +22,7 @@ class OutfitEmotion:
 
 @dataclass(frozen=True, slots=True)
 class OutfitTagWithEmotions:
-    """Тег стиля одежды (`kind=base`) и доступные для него эмоции."""
+    """Тег стиля одежды с доступными для него эмоциями."""
 
     outfit_tag: str
     name: str
@@ -31,7 +31,7 @@ class OutfitTagWithEmotions:
 
 @dataclass(frozen=True, slots=True)
 class VisualMatch:
-    """Подобранные визуальные слои персонажа."""
+    """Подобранные визуальные слои персонажа (asset_key слоёв)."""
 
     sprite_asset_key: str
     outfit_asset_key: str
@@ -39,7 +39,7 @@ class VisualMatch:
 
 
 class VisualService:
-    """Сервис подбора визуальных слоёв персонажа."""
+    """Сервис подбора визуальных слоёв персонажа и стилей одежды с эмоциями."""
 
     def __init__(
         self,
@@ -58,8 +58,12 @@ class VisualService:
     ) -> dict[int, list[OutfitTagWithEmotions]]:
         """Группирует одежду персонажей по тегам стиля (`outfit_style`, `kind=base`).
 
-        В каждой группе — emotion-теги эмоций спрайтов, к которым привязана
-        одежда с этим тегом. Базовые эмоции (`kind=base`) идут первыми.
+        В каждой группе — теги эмоций тех спрайтов, к которым привязана одежда
+        с этим стилем; сначала `base`, затем `modifier`. Тег стиля попадает в
+        выдачу даже без эмоций (с пустым списком).
+
+        :param character_ids: id персонажей.
+        :return: `character_id` → группы тегов стиля.
         """
         if not character_ids:
             return {}
@@ -121,10 +125,16 @@ class VisualService:
     ) -> VisualMatch | None:
         """Подбирает согласованный набор слоёв: спрайт + наряд + эмоция.
 
-        Наряд ищется по `outfit_tag` среди всех спрайтов персонажа.
-        Предпочитается спрайт, у которого есть эмоция под `emotion_tags`, затем
-        наряд с большим `id`. Если эмоции нет ни у одного спрайта, возвращается
-        наряд с большим `id` и `emotion_asset_key=None`; если наряда нет — `None`.
+        Наряд ищется по `outfit_tag` среди всех спрайтов персонажа. На каждый
+        спрайт берётся наряд с большим `id`; предпочитается спрайт, у которого
+        есть эмоция под `emotion_tags`, затем — наряд с большим `id`.
+
+        :param character_id: id персонажа.
+        :param outfit_tag: slug тега `outfit_style`.
+        :param emotion_tags: slug'и тегов `emotion`: ровно один `base` +
+            0..N `modifier`.
+        :return: слои персонажа, `emotion_asset_key=None`, если эмоция не
+            найдена ни у одного спрайта, или None, если наряда нет.
         """
         outfits = await self._outfits.get_by_character_and_tag(
             character_id, outfit_tag, include_tags=False
@@ -132,8 +142,7 @@ class VisualService:
         if not outfits:
             return None
 
-        # Для каждого спрайта — наряд с наибольшим id. Не полагаемся на порядок
-        # сортировки репозитория.
+        # Для каждого спрайта — наряд с наибольшим id.
         best_outfit_by_sprite: dict[int, Outfit] = {}
         for outfit in outfits:
             current = best_outfit_by_sprite.get(outfit.sprite_id)
@@ -185,7 +194,7 @@ class _OutfitTagGroup:
 
 
 def _emotion_tag_sort_key(emotion: OutfitEmotion) -> int:
-    """Порядок эмоций в группе: базовые (`kind=base`) идут первыми."""
+    """Порядок эмоций в группе: `base`, затем `modifier`, затем прочие."""
     if emotion.kind is TagKind.BASE:
         return 0
     if emotion.kind is TagKind.MODIFIER:

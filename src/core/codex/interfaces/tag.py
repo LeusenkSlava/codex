@@ -8,28 +8,28 @@ class TagRepositoryProtocol(Protocol):
     """Репозиторий тегов."""
 
     async def get_by_type(self, tag_type: TagType) -> list[Tag]:
-        """Возвращает все теги указанного типа.
+        """Все теги указанного типа.
 
         :param tag_type: тип тега.
-        :return: список тегов.
+        :return: теги, по slug.
         """
         ...
 
     async def get_by_slugs(self, slugs: list[str]) -> dict[str, Tag]:
-        """Возвращает emotion-теги по slug'ам.
+        """Теги `emotion` по slug'ам.
 
-        :param slugs: slug'и тегов типа emotion.
-        :return: словарь slug -> тег.
+        :param slugs: slug'и тегов `emotion`.
+        :return: slug → тег; ненайденные slug'и в словарь не попадают.
         """
         ...
 
     async def get_by_slugs_and_types(
         self, slugs: list[str], tag_types: tuple[TagType, ...]
     ) -> dict[str, Tag]:
-        """Возвращает теги указанных типов по slug'ам.
+        """Теги указанных типов по slug'ам.
 
         :param slugs: slug'и тегов.
         :param tag_types: допустимые типы тегов.
-        :return: словарь slug -> тег.
+        :return: slug → тег; теги других типов в словарь не попадают.
         """
         ...

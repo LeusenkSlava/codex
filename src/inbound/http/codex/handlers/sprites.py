@@ -9,7 +9,12 @@ from src.inbound.http.codex.schemas import OutfitMatchRequest, OutfitSchema
 router = APIRouter(tags=["sprites"])
 
 
-@router.get("/sprites/{sprite_id}/outfits", response_model=list[OutfitSchema])
+@router.get(
+    "/sprites/{sprite_id}/outfits",
+    response_model=list[OutfitSchema],
+    summary="Одежда спрайта",
+    description="Одежда спрайта с тегами.",
+)
 async def get_outfits(
     sprite_id: int,
     service: Annotated[OutfitService, Depends(get_outfit_service)],
@@ -20,12 +25,9 @@ async def get_outfits(
 @router.post(
     "/sprites/{sprite_id}/outfits/match",
     response_model=OutfitSchema,
-    summary="Подобрать одежду спрайта по тегу",
-    description=(
-        "При нескольких совпадениях вернётся одежда с большим `id`. "
-        "Если ничего не найдено — `404`."
-    ),
-    responses={404: {"description": "Подходящая одежда не найдена"}},
+    summary="Подобрать одежду спрайта",
+    description="При нескольких совпадениях вернётся одежда с большим `id`.",
+    responses={404: {"description": "Подходящая одежда не найдена."}},
 )
 async def match_outfit(
     sprite_id: int,

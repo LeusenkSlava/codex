@@ -5,7 +5,7 @@ from src.core.codex.models.tag import Tag
 
 @dataclass(frozen=True, slots=True)
 class Universe:
-    """Вселенная."""
+    """Вселенная (сеттинг новеллы)."""
 
     id: int
     slug: str
@@ -16,7 +16,7 @@ class Universe:
 
 @dataclass(frozen=True, slots=True)
 class Background:
-    """Задник (локация)."""
+    """Задник — локация вселенной с привязанным звуком."""
 
     id: int
     universe_id: int
@@ -29,7 +29,7 @@ class Background:
 
 @dataclass(frozen=True, slots=True)
 class Sound:
-    """Звук (музыка или звуковой эффект)."""
+    """Звук — музыка или звуковой эффект."""
 
     id: int
     universe_id: int
