@@ -22,10 +22,8 @@ async def get_outfits(
     response_model=OutfitSchema,
     summary="Подобрать одежду спрайта по тегу",
     description=(
-        "Подбирает одну одежду спрайта по одному тегу-стилю.\n\n"
-        "Если тегу соответствует несколько вариантов, возвращается одежда "
-        "с наибольшим `id`.\n\nЕсли подходящая одежда не найдена, "
-        "возвращается `404`."
+        "При нескольких совпадениях вернётся одежда с большим `id`. "
+        "Если ничего не найдено — `404`."
     ),
     responses={404: {"description": "Подходящая одежда не найдена"}},
 )
@@ -34,7 +32,6 @@ async def match_outfit(
     payload: OutfitMatchRequest,
     service: Annotated[OutfitService, Depends(get_outfit_service)],
 ):
-    """Подбирает одну одежду спрайта по тегу."""
     outfit = await service.match(sprite_id, payload.tag)
     if outfit is None:
         raise HTTPException(status_code=404, detail="Подходящая одежда не найдена")

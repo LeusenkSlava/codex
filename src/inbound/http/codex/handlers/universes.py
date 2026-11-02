@@ -31,12 +31,16 @@ async def universes_list(
     service: Annotated[UniverseService, Depends(get_universe_service)],
     search: Annotated[
         str | None,
-        Query(description="Подстрока для поиска по названию (title), без учёта регистра."),
+        Query(
+            description="Подстрока для поиска по `title`, без учёта регистра.",
+        ),
     ] = None,
-    offset: Annotated[int, Query(ge=0, description="Сколько вселенных пропустить.")] = 0,
+    offset: Annotated[
+        int, Query(ge=0, description="Сколько вселенных пропустить.")
+    ] = 0,
     limit: Annotated[
         int,
-        Query(ge=1, le=100, description="Максимальное число вселенных в странице."),
+        Query(ge=1, le=100, description="Размер страницы (1..100)."),
     ] = 20,
 ):
     items, total = await service.search(query=search, offset=offset, limit=limit)
@@ -75,11 +79,10 @@ async def get_backgrounds(
 @router.get(
     "/universes/{universe_id}/backgrounds/tags",
     response_model=BackgroundTagsResponse,
-    summary="Теги задников вселенной (базовые локации и модификаторы)",
+    summary="Теги задников вселенной",
     description=(
-        "Возвращает все теги задников вселенной, разделённые по роли (kind): "
-        "`base` — локации, `modifiers` — уточнения (время суток, внутри/снаружи, "
-        "свет, люди). Внутри каждой группы теги отсортированы по slug."
+        "Теги задников вселенной по роли: `base` — локации, `modifiers` — "
+        "уточнения. Внутри групп — сортировка по slug."
     ),
 )
 async def get_background_tags(
@@ -94,12 +97,9 @@ async def get_background_tags(
     response_model=BackgroundSchema,
     summary="Подобрать задник вселенной по тегам",
     description=(
-        "Подбирает один самый подходящий задник вселенной по набору тегов-смыслов.\n\n"
-        "Правила подбора: тег с `kind=base` (локация) обязателен и должен быть "
-        "ровно один; далее побеждает задник с большим числом совпавших `modifier`, "
-        "затем — с меньшим числом лишних (неуказанных) `modifier`; при равенстве — "
-        "с меньшим `id`.\n\n"
-        "Если подходящий задник не найден, возвращается `404`."
+        "Ровно один тег должен быть `base` (локация). Приоритет: больше "
+        "совпавших `modifier`, затем меньше лишних `modifier`, затем меньший "
+        "`id`. Если ничего не подошло — `404`."
     ),
     responses={404: {"description": "Подходящий задник не найден"}},
 )
@@ -108,7 +108,6 @@ async def match_background(
     payload: BackgroundTagsRequest,
     service: Annotated[BackgroundService, Depends(get_background_service)],
 ):
-    """Подбирает один самый подходящий задник вселенной по тегам."""
     background = await service.match(universe_id, payload.tags)
     if background is None:
         raise HTTPException(status_code=404, detail="Подходящий задник не найден")
@@ -120,19 +119,14 @@ async def match_background(
     response_model=dict[int, BackgroundSchema | None],
     summary="Подобрать задники для нескольких вселенных (батч)",
     description=(
-        "Принимает список запросов `{universe_id, tags}` и для каждого подбирает "
-        "один самый подходящий задник по тем же правилам, что и одиночный `match` "
-        "(число совпавших `time_of_day`, затем меньше лишних `time_of_day`, "
-        "затем меньший `id`).\n\n"
-        "Ответ — словарь `universe_id -> задник`. Если ничего не подошло, "
-        "значение равно `null`."
+        "То же, что одиночный `match`, для списка вселенных. Ответ — "
+        "`universe_id -> задник` (`null`, если ничего не подошло)."
     ),
 )
 async def match_backgrounds_batch(
     payload: list[BackgroundMatchItem],
     service: Annotated[BackgroundService, Depends(get_background_service)],
 ):
-    """Подбирает лучший задник для каждой вселенной из батча."""
     queries = [
         BackgroundMatchQuery(universe_id=item.universe_id, tags=item.tags)
         for item in payload

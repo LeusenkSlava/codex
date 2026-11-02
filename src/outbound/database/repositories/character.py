@@ -145,7 +145,11 @@ class OutfitRepository:
         return self._to_domain(model) if model else None
 
     async def get_by_character_and_tag(
-        self, character_id: int, tag_slug: str
+        self,
+        character_id: int,
+        tag_slug: str,
+        *,
+        include_tags: bool = True,
     ) -> list[Outfit]:
         stmt = (
             select(OutfitModel)
@@ -157,11 +161,12 @@ class OutfitRepository:
                 TagModel.slug == tag_slug,
                 TagModel.type == TagType.OUTFIT_STYLE,
             )
-            .options(selectinload(OutfitModel.tags))
             .order_by(OutfitModel.id.desc())
         )
+        if include_tags:
+            stmt = stmt.options(selectinload(OutfitModel.tags))
         result = await self._session.scalars(stmt)
-        return [self._to_domain(m) for m in result]
+        return [self._to_domain(m, with_tags=include_tags) for m in result]
 
     async def get_tags_by_character(self, character_id: int) -> list[Tag]:
         """Возвращает уникальные outfit-теги всей одежды персонажа.
@@ -185,14 +190,16 @@ class OutfitRepository:
         return [TagRepository._to_domain(m) for m in result]
 
     @staticmethod
-    def _to_domain(model: OutfitModel) -> Outfit:
+    def _to_domain(model: OutfitModel, *, with_tags: bool = True) -> Outfit:
         return Outfit(
             id=model.id,
             sprite_id=model.sprite_id,
             slug=model.slug,
             name=model.name,
             asset_key=model.asset_key,
-            tags=[TagRepository._to_domain(t) for t in model.tags],
+            tags=(
+                [TagRepository._to_domain(t) for t in model.tags] if with_tags else []
+            ),
         )
 
 

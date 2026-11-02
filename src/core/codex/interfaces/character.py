@@ -77,7 +77,11 @@ class OutfitRepositoryProtocol(Protocol):
         ...
 
     async def get_by_character_and_tag(
-        self, character_id: int, tag_slug: str
+        self,
+        character_id: int,
+        tag_slug: str,
+        *,
+        include_tags: bool = True,
     ) -> list[Outfit]:
         """Возвращает всю одежду персонажа с указанным тегом.
 
@@ -85,7 +89,9 @@ class OutfitRepositoryProtocol(Protocol):
 
         :param character_id: id персонажа.
         :param tag_slug: slug тега одежды.
-        :return: список одежды с тегами.
+        :param include_tags: загружать ли теги одежды. Подбору визуала теги не
+            нужны — ``False`` позволяет не делать лишний запрос.
+        :return: список одежды с тегами (или без них при ``include_tags=False``).
         """
         ...
 
